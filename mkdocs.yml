@@ -1,0 +1,61 @@
+site_name: Git Patchdance
+site_description: Terminal and GUI tool for interactive git patch management
+site_author: Ronny Pfannschmidt
+repo_url: https://github.com/RonnyPfannschmidt/git-patchdance
+repo_name: git-patchdance
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: blue grey
+      accent: orange
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: blue grey
+      accent: orange
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.highlight
+    - content.code.copy
+
+nav:
+  - Home: index.md
+  - Design:
+    - Architecture: architecture.md
+    - UI Design: ui-design.md
+    - Technical Specification: technical-spec.md
+    - Git Integration: git-integration.md
+  - Development:
+    - Setup: development.md
+    - API Reference: api-reference.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+  - toc:
+      permalink: true
+
+plugins:
+  - search
+  - mermaid2
