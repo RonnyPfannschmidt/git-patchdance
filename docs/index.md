@@ -9,7 +9,7 @@ Git Patchdance is a powerful tool that provides an intuitive interface for movin
 ## Key Features
 
 - **Interactive Patch Management**: Move individual patches or parts of patches between commits
-- **Dual Interface**: Both terminal UI (TUI) and graphical UI (GUI) options
+- **Terminal Interface**: Modern async terminal UI using Textual
 - **Safe Operations**: Preview changes before applying, with undo functionality
 - **Flexible Workflows**: Support for complex git history restructuring
 - **Visual Diff Viewer**: Syntax-highlighted patch viewing and editing
@@ -30,24 +30,24 @@ Clean up commit history to create clear, reviewable changesets.
 
 ## Architecture
 
-Git Patchdance is built in Rust for performance and reliability, using:
+Git Patchdance is built in Python for ease of development and extensibility, using:
 
-- **ratatui** for terminal user interface
-- **egui** for graphical user interface  
-- **git2** for robust git operations
-- **tokio** for async operations
+- **Textual** for modern terminal user interface
+- **GitPython** for robust git operations
+- **asyncio** for async operations
+- **Click** for command-line interface
 
 ## Quick Start
 
 ```bash
 # Install git-patchdance
-cargo install git-patchdance
+pip install git-patchdance
 
 # Launch in terminal mode
 git-patchdance
 
-# Launch GUI mode
-git-patchdance --gui
+# Launch with specific repository
+git-patchdance --path /path/to/repo
 ```
 
 ## Documentation

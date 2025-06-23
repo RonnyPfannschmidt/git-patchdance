@@ -9,34 +9,41 @@ This document provides a comprehensive reference for Git Patchdance's public API
 #### `Repository`
 Represents a git repository and its current state.
 
-```rust
-pub struct Repository {
-    pub path: PathBuf,
-    pub current_branch: String,
-    pub is_dirty: bool,
-}
+```python
+@dataclass
+class Repository:
+    path: Path
+    current_branch: str
+    is_dirty: bool
+    head_commit: Optional[CommitId] = None
 ```
 
 #### `CommitId`
 Unique identifier for a git commit.
 
-```rust
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct CommitId(pub git2::Oid);
+```python
+@dataclass
+class CommitId:
+    value: str
+    
+    def short(self) -> str:
+        """Return short version of commit ID (first 8 characters)."""
+        return self.value[:8] if len(self.value) >= 8 else self.value
 ```
 
 #### `CommitInfo`
 Metadata about a git commit.
 
-```rust
-pub struct CommitInfo {
-    pub id: CommitId,
-    pub message: String,
-    pub author: String,
-    pub timestamp: chrono::DateTime<chrono::Utc>,
-    pub parent_ids: Vec<CommitId>,
-    pub files_changed: Vec<String>,
-}
+```python
+@dataclass
+class CommitInfo:
+    id: CommitId
+    message: str
+    author: str
+    email: str
+    timestamp: datetime
+    parent_ids: list[CommitId]
+    files_changed: list[str]
 ```
 
 ### Patch Types

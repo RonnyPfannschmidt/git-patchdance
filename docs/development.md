@@ -6,34 +6,37 @@ This guide covers setting up the development environment, building the project, 
 
 ### Required Tools
 
-- **Rust**: Version 1.70+ (install via [rustup](https://rustup.rs/))
-- **Git**: Version 2.30+ for full feature compatibility  
-- **Python**: Version 3.8+ (for documentation)
-- **pkg-config**: For native dependencies
-- **libgit2**: System library (optional, will build from source if not found)
+- **Python**: Version 3.11+ (install via [pyenv](https://github.com/pyenv/pyenv) or system package manager)
+- **uv**: Fast Python package manager (install via [uv installer](https://docs.astral.sh/uv/getting-started/installation/))
+- **Git**: Version 2.30+ for full feature compatibility
 
 ### Platform-Specific Setup
 
 #### Linux (Ubuntu/Debian)
 ```bash
 sudo apt update
-sudo apt install build-essential pkg-config libgit2-dev libssl-dev
+sudo apt install python3 python3-pip git
+curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
 #### Linux (Fedora/RHEL)
 ```bash
-sudo dnf install gcc pkg-config libgit2-devel openssl-devel
+sudo dnf install python3 python3-pip git
+curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
 #### macOS
 ```bash
-brew install pkg-config libgit2 openssl
+brew install python git
+curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
 #### Windows
 ```powershell
-# Using vcpkg
-vcpkg install libgit2:x64-windows openssl:x64-windows
+# Install Python from python.org or Microsoft Store
+# Install Git from git-scm.com
+# Install uv
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
 
 ## Project Setup
@@ -44,20 +47,17 @@ vcpkg install libgit2:x64-windows openssl:x64-windows
 git clone https://github.com/RonnyPfannschmidt/git-patchdance.git
 cd git-patchdance
 
-# Build debug version
-cargo build
+# Install dependencies and sync virtual environment
+uv sync
 
-# Build release version
-cargo build --release
-
-# Build with GUI support
-cargo build --features gui
+# Install with development dependencies
+uv sync --group dev
 
 # Run the application
-cargo run
+uv run python -m git_patchdance.cli
 
-# Run with GUI
-cargo run --features gui -- --gui
+# Run with specific repository path
+uv run python -m git_patchdance.cli --path /path/to/repo
 ```
 
 ### Development Environment
@@ -68,10 +68,11 @@ Recommended VS Code extensions:
 ```json
 {
     "recommendations": [
-        "rust-lang.rust-analyzer",
-        "tamasfe.even-better-toml",
-        "vadimcn.vscode-lldb",
-        "serayuzgur.crates"
+        "ms-python.python",
+        "ms-python.black-formatter",
+        "ms-python.isort",
+        "ms-python.mypy-type-checker",
+        "charliermarsh.ruff"
     ]
 }
 ```
@@ -79,21 +80,27 @@ Recommended VS Code extensions:
 VS Code settings (`.vscode/settings.json`):
 ```json
 {
-    "rust-analyzer.cargo.features": ["tui"],
-    "rust-analyzer.checkOnSave.command": "clippy",
-    "rust-analyzer.checkOnSave.extraArgs": ["--", "-W", "clippy::all"]
+    "python.defaultInterpreterPath": ".venv/bin/python",
+    "python.formatting.provider": "black",
+    "python.linting.enabled": true,
+    "python.linting.mypyEnabled": true,
+    "python.linting.ruffEnabled": true,
+    "python.testing.pytestEnabled": true,
+    "python.testing.pytestArgs": ["tests/"]
 }
 ```
 
-#### Rust Analyzer Configuration
+#### Python Environment Configuration
 
-Create `.vscode/settings.json`:
-```json
-{
-    "rust-analyzer.cargo.features": "all",
-    "rust-analyzer.procMacro.enable": true,
-    "rust-analyzer.cargo.loadOutDirsFromCheck": true
-}
+Create `.venv` directory and activate:
+```bash
+# uv automatically manages virtual environments
+uv sync
+
+# Activate manually if needed
+source .venv/bin/activate  # Linux/macOS
+# or
+.venv\Scripts\activate     # Windows
 ```
 
 ## Documentation
@@ -102,78 +109,71 @@ Create `.vscode/settings.json`:
 
 #### Code Documentation
 ```bash
-# Build API documentation
-cargo doc --open
+# Generate API documentation using pydoc
+uv run python -m pydoc -w git_patchdance
 
-# Build with all features
-cargo doc --features gui --open
-
-# Generate private items documentation  
-cargo doc --document-private-items --open
+# Generate documentation using pdoc (if available)
+uv run pdoc --html git_patchdance
 ```
 
 #### User Documentation
 ```bash
-# Install MkDocs and dependencies
-pip install mkdocs mkdocs-material mkdocs-mermaid2-plugin
+# Install MkDocs and dependencies (included in dev dependencies)
+uv sync --group dev
 
 # Serve documentation locally
-mkdocs serve
+uv run mkdocs serve
 
 # Build static documentation
-mkdocs build
+uv run mkdocs build
 
 # Deploy to GitHub Pages
-mkdocs gh-deploy
+uv run mkdocs gh-deploy
 ```
 
 ### Documentation Standards
 
-- All public APIs must have documentation comments
-- Use examples in documentation where appropriate
+- All public APIs must have docstrings following Google style
+- Use type hints throughout the codebase
+- Include examples in docstrings where appropriate
 - Keep documentation up-to-date with code changes
-- Use `///` for public item documentation
-- Use `//!` for module-level documentation
 
 Example:
-```rust
-/// Extracts patches from a git commit.
-///
-/// This function analyzes the diff between a commit and its parent(s)
-/// to extract individual patches that can be manipulated independently.
-///
-/// # Arguments
-///
-/// * `commit_id` - The git commit ID to extract patches from
-/// * `filter` - Optional filter to select specific files or hunks
-///
-/// # Returns
-///
-/// A vector of `Patch` objects representing the changes in the commit.
-///
-/// # Examples
-///
-/// ```rust
-/// use git_patchdance::{PatchExtractor, CommitId};
-///
-/// let extractor = PatchExtractor::new(repo);
-/// let patches = extractor.extract_patches(commit_id, None).await?;
-/// println!("Found {} patches", patches.len());
-/// ```
-///
-/// # Errors
-///
-/// Returns an error if:
-/// - The commit ID is invalid
-/// - The repository is in an inconsistent state
-/// - Git operations fail
-pub async fn extract_patches(
-    &self,
+```python
+async def extract_patches(
+    self,
+    repository: Repository,
     commit_id: CommitId,
-    filter: Option<PatchFilter>,
-) -> Result<Vec<Patch>> {
-    // Implementation...
-}
+    filter_func: Optional[Callable[[Patch], bool]] = None,
+) -> list[Patch]:
+    """Extract patches from a git commit.
+
+    This function analyzes the diff between a commit and its parent(s)
+    to extract individual patches that can be manipulated independently.
+
+    Args:
+        repository: The git repository containing the commit
+        commit_id: The git commit ID to extract patches from
+        filter_func: Optional function to filter patches
+
+    Returns:
+        A list of Patch objects representing the changes in the commit.
+
+    Raises:
+        GitPatchError: If the commit ID is invalid or git operations fail.
+        RepositoryNotFound: If the repository is not accessible.
+
+    Example:
+        ```python
+        from git_patchdance import GitServiceImpl, Repository
+
+        git_service = GitServiceImpl()
+        repo = await git_service.open_repository()
+        patches = await git_service.extract_patches(repo, commit_id)
+        print(f"Found {len(patches)} patches")
+        ```
+    """
+    # Implementation...
 ```
 
 ## Testing
@@ -182,22 +182,22 @@ pub async fn extract_patches(
 
 ```bash
 # Run all tests
-cargo test
+uv run pytest
 
 # Run tests with output
-cargo test -- --nocapture
+uv run pytest -v
 
 # Run specific test
-cargo test test_patch_extraction
+uv run pytest tests/unit/test_models.py::TestCommitId::test_commit_id_creation
 
 # Run tests for specific module
-cargo test git_service
+uv run pytest tests/unit/test_models.py
 
 # Run integration tests only
-cargo test --test integration
+uv run pytest tests/integration/
 
-# Run with all features
-cargo test --features gui
+# Run with coverage
+uv run pytest --cov=git_patchdance --cov-report=html
 ```
 
 ### Test Organization
@@ -205,180 +205,157 @@ cargo test --features gui
 ```
 tests/
 ├── integration/           # Integration tests
-│   ├── git_operations.rs
-│   ├── patch_management.rs
-│   └── ui_workflows.rs
+│   ├── test_git_operations.py
+│   ├── test_patch_management.py
+│   └── test_tui_workflows.py
+├── unit/                  # Unit tests
+│   ├── test_models.py
+│   ├── test_git_service.py
+│   └── test_app_state.py
 ├── fixtures/              # Test data
 │   ├── repos/
 │   └── patches/
-└── common/                # Test utilities
-    ├── mod.rs
-    └── test_repo.rs
-
-src/
-└── lib.rs
-    ├── git_service/
-    │   ├── mod.rs
-    │   └── tests.rs       # Unit tests
-    └── patch_manager/
-        ├── mod.rs
-        └── tests.rs       # Unit tests
+└── conftest.py           # Test configuration and fixtures
 ```
 
 ### Writing Tests
 
 #### Unit Tests
-```rust
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use tempfile::TempDir;
+```python
+import pytest
+from pathlib import Path
+from git_patchdance.core.models import CommitId, CommitInfo
+
+
+class TestCommitId:
+    """Tests for CommitId dataclass."""
     
-    #[tokio::test]
-    async fn test_patch_extraction() {
-        // Setup
-        let temp_dir = TempDir::new().unwrap();
-        let repo = create_test_repo(&temp_dir).await;
-        let extractor = PatchExtractor::new(repo);
-        
-        // Execute
-        let patches = extractor.extract_patches(commit_id, None).await.unwrap();
-        
-        // Verify
-        assert_eq!(patches.len(), 2);
-        assert_eq!(patches[0].target_file, PathBuf::from("src/main.rs"));
-    }
+    def test_commit_id_creation(self):
+        """Test creating a CommitId."""
+        commit_id = CommitId("a1b2c3d4e5f6789012345678901234567890abcd")
+        assert commit_id.value == "a1b2c3d4e5f6789012345678901234567890abcd"
     
-    async fn create_test_repo(temp_dir: &TempDir) -> Repository {
-        // Helper function to create test repository
-        // Implementation...
-    }
-}
+    def test_commit_id_short(self):
+        """Test getting short version of commit ID."""
+        commit_id = CommitId("a1b2c3d4e5f6789012345678901234567890abcd")
+        assert commit_id.short() == "a1b2c3d4"
+
+
+@pytest.mark.asyncio
+async def test_async_operation():
+    """Test async git operations."""
+    # Setup
+    git_service = GitServiceImpl()
+    repo = await git_service.open_repository(Path("."))
+    
+    # Execute
+    commit_graph = await git_service.get_commit_graph(repo, limit=10)
+    
+    # Verify
+    assert len(commit_graph.commits) <= 10
+    assert commit_graph.current_branch is not None
 ```
 
 #### Integration Tests
-```rust
-use git_patchdance::{GitService, PatchManager, Repository};
-use std::process::Command;
-use tempfile::TempDir;
+```python
+import pytest
+from tempfile import TemporaryDirectory
+from git_patchdance import GitServiceImpl, PatchManager
 
-#[tokio::test]
-async fn test_full_patch_workflow() {
-    // Create test repository with history
-    let test_repo = TestRepository::with_commits(&[
-        ("Initial commit", &[("file1.txt", "content1")]),
-        ("Add feature", &[("file2.txt", "content2")]),
-        ("Fix bug", &[("file1.txt", "fixed content1")]),
-    ]).await;
-    
-    // Initialize services
-    let git_service = GitService::new();
-    let patch_manager = PatchManager::new(git_service);
-    
-    // Extract patch from second commit
-    let patches = patch_manager
-        .extract_patches(&test_repo.repo, &test_repo.commits[1])
-        .await
-        .unwrap();
-    
-    // Move patch to third commit
-    let result = patch_manager
-        .move_patch(&patches[0], &test_repo.commits[2])
-        .await
-        .unwrap();
-    
-    // Verify result
-    assert!(result.success);
-    assert_eq!(result.conflicts.len(), 0);
-}
+
+@pytest.mark.asyncio
+async def test_full_patch_workflow():
+    """Test complete patch workflow from extraction to application."""
+    # Create test repository with history
+    with TemporaryDirectory() as temp_dir:
+        test_repo = await create_test_repo_with_commits(temp_dir, [
+            ("Initial commit", {"file1.txt": "content1"}),
+            ("Add feature", {"file2.txt": "content2"}),
+            ("Fix bug", {"file1.txt": "fixed content1"}),
+        ])
+        
+        # Initialize services
+        git_service = GitServiceImpl()
+        patch_manager = PatchManager(git_service)
+        
+        # Extract patches from second commit
+        patches = await patch_manager.extract_patches(
+            test_repo.repository, test_repo.commits[1]
+        )
+        
+        # Apply patches to third commit
+        result = await patch_manager.apply_patches(
+            test_repo.repository, patches, test_repo.commits[2]
+        )
+        
+        # Verify result
+        assert result.success
+        assert len(result.conflicts) == 0
 ```
 
 ### Test Utilities
 
-Create common test utilities in `tests/common/mod.rs`:
+Create test utilities in `tests/conftest.py`:
 
-```rust
-use git2::{Repository as Git2Repository, Signature};
-use std::fs;
-use std::path::Path;
-use tempfile::TempDir;
+```python
+import pytest
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from git import Repo
+from git_patchdance.core.models import CommitId, Repository
 
-pub struct TestRepository {
-    pub temp_dir: TempDir,
-    pub repo: Git2Repository,
-    pub commits: Vec<git2::Oid>,
-}
 
-impl TestRepository {
-    pub async fn new() -> Self {
-        let temp_dir = TempDir::new().unwrap();
-        let repo = Git2Repository::init(temp_dir.path()).unwrap();
+@pytest.fixture
+async def temp_git_repo():
+    """Create a temporary git repository for testing."""
+    with TemporaryDirectory() as temp_dir:
+        repo_path = Path(temp_dir)
+        repo = Repo.init(repo_path)
         
-        // Set up test user
-        let mut config = repo.config().unwrap();
-        config.set_str("user.name", "Test User").unwrap();
-        config.set_str("user.email", "test@example.com").unwrap();
+        # Configure git user for test commits
+        with repo.config_writer() as config:
+            config.set_value("user", "name", "Test User")
+            config.set_value("user", "email", "test@example.com")
         
-        Self {
-            temp_dir,
-            repo,
-            commits: Vec::new(),
+        # Create initial commit
+        test_file = repo_path / "test.txt"
+        test_file.write_text("Initial content\n")
+        repo.index.add([str(test_file)])
+        initial_commit = repo.index.commit("Initial commit")
+        
+        yield {
+            "path": repo_path,
+            "repo": repo,
+            "initial_commit": CommitId(initial_commit.hexsha),
         }
-    }
+
+
+class TestRepository:
+    """Helper class for creating test repositories."""
     
-    pub async fn with_commits(commits: &[(&str, &[(&str, &str)])]) -> Self {
-        let mut test_repo = Self::new().await;
+    def __init__(self, temp_dir: Path):
+        self.temp_dir = temp_dir
+        self.repo = Repo.init(temp_dir)
+        self.commits: list[str] = []
         
-        for (message, files) in commits {
-            test_repo.create_commit(message, files);
-        }
-        
-        test_repo
-    }
+        # Configure git user
+        with self.repo.config_writer() as config:
+            config.set_value("user", "name", "Test User")
+            config.set_value("user", "email", "test@example.com")
     
-    pub fn create_commit(&mut self, message: &str, files: &[(&str, &str)]) -> git2::Oid {
-        // Write files
-        for (file_path, content) in files {
-            let full_path = self.temp_dir.path().join(file_path);
-            if let Some(parent) = full_path.parent() {
-                fs::create_dir_all(parent).unwrap();
-            }
-            fs::write(&full_path, content).unwrap();
-        }
+    def create_commit(self, message: str, files: dict[str, str]) -> str:
+        """Create a commit with specified files and content."""
+        # Write files
+        for file_path, content in files.items():
+            full_path = self.temp_dir / file_path
+            full_path.parent.mkdir(parents=True, exist_ok=True)
+            full_path.write_text(content)
         
-        // Stage files
-        let mut index = self.repo.index().unwrap();
-        for (file_path, _) in files {
-            index.add_path(Path::new(file_path)).unwrap();
-        }
-        index.write().unwrap();
-        
-        // Create commit
-        let tree_id = index.write_tree().unwrap();
-        let tree = self.repo.find_tree(tree_id).unwrap();
-        let signature = Signature::now("Test User", "test@example.com").unwrap();
-        
-        let parents: Vec<_> = if self.commits.is_empty() {
-            Vec::new()
-        } else {
-            vec![self.repo.find_commit(self.commits.last().unwrap().clone()).unwrap()]
-        };
-        
-        let parent_refs: Vec<&git2::Commit> = parents.iter().collect();
-        
-        let commit_id = self.repo.commit(
-            Some("HEAD"),
-            &signature,
-            &signature,
-            message,
-            &tree,
-            &parent_refs,
-        ).unwrap();
-        
-        self.commits.push(commit_id);
-        commit_id
-    }
-}
+        # Stage and commit
+        self.repo.index.add(list(files.keys()))
+        commit = self.repo.index.commit(message)
+        self.commits.append(commit.hexsha)
+        return commit.hexsha
 ```
 
 ## Code Quality
@@ -387,19 +364,19 @@ impl TestRepository {
 
 ```bash
 # Format code
-cargo fmt
+uv run ruff format src/ tests/
 
 # Check formatting without making changes
-cargo fmt -- --check
+uv run ruff format --check src/ tests/
 
-# Run clippy (linter)
-cargo clippy
+# Run linter
+uv run ruff check src/ tests/
 
-# Run clippy with all features
-cargo clippy --features gui
+# Run linter with auto-fix
+uv run ruff check --fix src/ tests/
 
-# Run clippy with strict settings
-cargo clippy -- -W clippy::all -W clippy::pedantic
+# Type checking
+uv run mypy src/
 ```
 
 ### Pre-commit Hooks
@@ -409,27 +386,27 @@ Install pre-commit hooks using [pre-commit](https://pre-commit.com/):
 ```yaml
 # .pre-commit-config.yaml
 repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.1.0
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.6.0
+    hooks:
+      - id: mypy
+        additional_dependencies: [types-requests]
+
   - repo: local
     hooks:
-      - id: cargo-fmt
-        name: cargo fmt
-        entry: cargo fmt --
+      - id: pytest
+        name: pytest
+        entry: uv run pytest
         language: system
-        types: [rust]
-        
-      - id: cargo-clippy
-        name: cargo clippy
-        entry: cargo clippy --features gui -- -D warnings
-        language: system
-        types: [rust]
         pass_filenames: false
-        
-      - id: cargo-test
-        name: cargo test
-        entry: cargo test --features gui
-        language: system
-        types: [rust]
-        pass_filenames: false
+        always_run: true
 ```
 
 ### Code Coverage
@@ -437,14 +414,15 @@ repos:
 Generate code coverage reports:
 
 ```bash
-# Install tarpaulin
-cargo install cargo-tarpaulin
-
 # Generate coverage report
-cargo tarpaulin --features gui --out Html
+uv run pytest --cov=git_patchdance --cov-report=html
 
 # Generate coverage for CI
-cargo tarpaulin --features gui --out Xml
+uv run pytest --cov=git_patchdance --cov-report=xml
+
+# View coverage report
+open htmlcov/index.html  # macOS
+xdg-open htmlcov/index.html  # Linux
 ```
 
 ## Benchmarking
@@ -452,44 +430,42 @@ cargo tarpaulin --features gui --out Xml
 ### Performance Testing
 
 ```bash
-# Install criterion
-cargo install cargo-criterion
+# Install benchmarking tools
+uv add --group dev pytest-benchmark
 
 # Run benchmarks
-cargo bench
-
-# Run specific benchmark
-cargo bench patch_extraction
+uv run pytest tests/benchmarks/ --benchmark-only
 
 # Generate benchmark reports
-cargo criterion --message-format=json > benchmark_results.json
+uv run pytest tests/benchmarks/ --benchmark-json=benchmark.json
 ```
 
 ### Benchmark Structure
 
-```rust
-// benches/patch_operations.rs
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use git_patchdance::{PatchExtractor, TestRepository};
+```python
+# tests/benchmarks/test_patch_operations.py
+import pytest
+from git_patchdance import PatchExtractor, TestRepository
 
-fn bench_patch_extraction(c: &mut Criterion) {
-    let rt = tokio::runtime::Runtime::new().unwrap();
-    let test_repo = rt.block_on(TestRepository::with_large_history());
-    let extractor = PatchExtractor::new(test_repo.repo.clone());
+
+class TestPatchPerformance:
+    """Performance tests for patch operations."""
     
-    c.bench_function("extract_patches_large_commit", |b| {
-        b.to_async(&rt).iter(|| async {
-            let patches = extractor
-                .extract_patches(black_box(test_repo.commits[100]), None)
-                .await
-                .unwrap();
-            black_box(patches);
-        })
-    });
-}
-
-criterion_group!(benches, bench_patch_extraction);
-criterion_main!(benches);
+    @pytest.fixture
+    def large_repo(self):
+        """Create a repository with many commits for benchmarking."""
+        test_repo = TestRepository.with_large_history(1000)
+        return test_repo
+    
+    def test_extract_patches_performance(self, benchmark, large_repo):
+        """Benchmark patch extraction performance."""
+        extractor = PatchExtractor(large_repo.repository)
+        
+        def extract_patches():
+            return extractor.extract_patches(large_repo.commits[100])
+        
+        result = benchmark(extract_patches)
+        assert len(result) > 0
 ```
 
 ## Contributing
@@ -497,7 +473,7 @@ criterion_main!(benches);
 ### Pull Request Process
 
 1. **Fork the repository** and create a feature branch
-2. **Write tests** for any new functionality
+2. **Write tests** for any new functionality (test-first development)
 3. **Ensure all tests pass** and code is formatted
 4. **Update documentation** for any API changes
 5. **Submit a pull request** with clear description
@@ -527,8 +503,8 @@ Examples:
 ```
 feat(patch): add support for binary file patches
 
-Implement binary patch detection and handling using git's
-binary diff format. This enables moving binary files
+Implement binary patch detection and handling using GitPython's
+binary diff capabilities. This enables moving binary files
 between commits.
 
 Fixes #45
@@ -548,7 +524,7 @@ are detected and add examples for common use cases.
 
 #### For Contributors
 - Keep PRs focused and reasonably sized
-- Include tests for new functionality
+- Include tests for new functionality (test-first approach)
 - Update documentation
 - Respond promptly to review feedback
 
@@ -556,7 +532,7 @@ are detected and add examples for common use cases.
 - Focus on correctness, performance, and maintainability
 - Provide constructive feedback
 - Test the changes locally when possible
-- Check for proper error handling
+- Check for proper error handling and type hints
 
 ## Release Process
 
@@ -570,12 +546,12 @@ Git Patchdance follows semantic versioning (SemVer):
 
 ### Release Checklist
 
-1. **Update version** in `Cargo.toml`
+1. **Update version** in `src/git_patchdance/__init__.py`
 2. **Update CHANGELOG.md** with release notes
-3. **Run full test suite** with all features
-4. **Build release binaries** for all platforms
+3. **Run full test suite** with coverage
+4. **Build package** using uv
 5. **Create git tag** and push to repository
-6. **Publish to crates.io** (if applicable)
+6. **Publish to PyPI** (if applicable)
 7. **Update documentation** and deploy
 
 ### Automated Releases
@@ -593,12 +569,47 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - name: Build release
-        run: cargo build --release --features gui
-      - name: Create release
-        uses: actions/create-release@v1
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v1
+      - name: Set up Python
+        run: uv python install 3.11
+      - name: Install dependencies
+        run: uv sync
+      - name: Run tests
+        run: uv run pytest
+      - name: Build package
+        run: uv build
+      - name: Publish to PyPI
+        run: uv publish --token ${{ secrets.PYPI_TOKEN }}
 ```
+
+## Debugging
+
+### Development Tools
+
+```bash
+# Run with debug logging
+uv run python -m git_patchdance.cli --log-level DEBUG
+
+# Profile application performance
+uv run python -m cProfile -o profile.stats -m git_patchdance.cli
+
+# Interactive debugging with ipdb
+uv add --group dev ipdb
+# Add `import ipdb; ipdb.set_trace()` in code
+```
+
+### Common Issues
+
+1. **Import errors**: Ensure virtual environment is activated
+2. **Git permission errors**: Check repository permissions
+3. **Type checking failures**: Update type annotations
+4. **Test failures**: Run tests in isolation to identify issues
+
+### Getting Help
+
+- Check the [documentation](../index.md)
+- Search [existing issues](https://github.com/RonnyPfannschmidt/git-patchdance/issues)
+- Ask questions in discussions
+- Submit bug reports with minimal reproduction cases

@@ -7,8 +7,7 @@ Git Patchdance is designed as a modular system with clear separation of concerns
 ```mermaid
 graph TB
     subgraph "User Interface Layer"
-        TUI[Terminal UI<br/>ratatui]
-        GUI[Graphical UI<br/>egui]
+        TUI[Terminal UI<br/>Textual]
     end
     
     subgraph "Application Layer"
@@ -23,13 +22,12 @@ graph TB
     end
     
     subgraph "Infrastructure Layer"
-        REPO[Repository<br/>git2 bindings]
+        REPO[Repository<br/>GitPython bindings]
         FS[File System<br/>Temp files, Config]
-        LOG[Logging<br/>tracing]
+        LOG[Logging<br/>Python logging]
     end
     
     TUI --> APP
-    GUI --> APP
     APP --> CMD
     CMD --> PM
     PM --> GIT
@@ -45,16 +43,10 @@ graph TB
 ### User Interface Layer
 
 #### Terminal UI (TUI)
-- **Framework**: ratatui with crossterm backend
+- **Framework**: Textual with async event handling
 - **Layout**: Multi-pane interface with commit browser, patch viewer, and operation panel
-- **Interaction**: Keyboard-driven navigation with vim-like keybindings
-- **Features**: Syntax highlighting, scrollable views, modal dialogs
-
-#### Graphical UI (GUI) 
-- **Framework**: egui with native windowing
-- **Layout**: Tabbed interface with drag-and-drop support
-- **Interaction**: Mouse and keyboard input
-- **Features**: Visual diff rendering, interactive patch selection
+- **Interaction**: Keyboard-driven navigation with intuitive keybindings
+- **Features**: Syntax highlighting, scrollable views, modal dialogs, rich text rendering
 
 ### Application Layer
 
@@ -68,14 +60,14 @@ Central state management and coordination between UI and domain layers.
 - Undo/redo history management
 
 **Key Structures:**
-```rust
-pub struct AppState {
-    repository: Option<Repository>,
-    commit_history: Vec<CommitInfo>,
-    selected_commits: HashSet<CommitId>,
-    patch_operations: Vec<PatchOperation>,
-    ui_state: UiState,
-}
+```python
+@dataclass
+class AppState:
+    repository: Optional[Repository]
+    commit_history: list[CommitInfo]
+    selected_commits: set[CommitId]
+    patch_operations: list[PatchOperation]
+    ui_state: UiState
 ```
 
 #### Command Handler
@@ -100,18 +92,30 @@ Core business logic for patch manipulation and git history operations.
 - Handle merge conflicts
 
 **Key Structures:**
-```rust
-pub struct PatchManager {
-    git_service: GitService,
-    diff_engine: DiffEngine,
-    operation_history: Vec<Operation>,
-}
+```python
+@dataclass
+class PatchManager:
+    git_service: GitService
+    diff_engine: DiffEngine
+    operation_history: list[Operation]
 
-pub enum PatchOperation {
-    MovePatch { from: CommitId, to: CommitId, patch: PatchId },
-    SplitCommit { commit: CommitId, patches: Vec<PatchId> },
-    CreateCommit { patches: Vec<PatchId>, message: String },
-}
+@dataclass
+class MovePatch:
+    from_commit: CommitId
+    to_commit: CommitId
+    patch_id: PatchId
+
+@dataclass
+class SplitCommit:
+    commit: CommitId
+    patches: list[PatchId]
+
+@dataclass  
+class CreateCommit:
+    patches: list[PatchId]
+    message: str
+
+Operation = Union[MovePatch, SplitCommit, CreateCommit]
 ```
 
 #### Git Service  
@@ -136,7 +140,7 @@ Patch analysis, manipulation, and conflict resolution.
 ### Infrastructure Layer
 
 #### Repository Layer
-Low-level git operations using git2 bindings.
+Low-level git operations using GitPython bindings.
 
 **Responsibilities:**
 - Direct git object manipulation
@@ -175,9 +179,9 @@ Configuration and temporary file management.
 
 ## Concurrency Model
 
-- **Async Core**: All I/O operations are async using tokio
+- **Async Core**: All I/O operations are async using asyncio
 - **Background Tasks**: Long operations run in background with progress updates
-- **UI Responsiveness**: UI remains responsive during git operations
+- **UI Responsiveness**: UI remains responsive during git operations using Textual's async framework
 - **Cancellation**: Support for cancelling long-running operations
 
 ## Security Considerations
