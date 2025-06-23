@@ -4,110 +4,155 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Git Patchdance is an interactive terminal and GUI tool for git patch management built in Rust. It enables moving patches between commits, splitting commits, and reorganizing git history through an intuitive interface.
+Git Patchdance is an interactive terminal tool for git patch management built in Python. It enables moving patches between commits, splitting commits, and reorganizing git history through an intuitive interface using Textual for the TUI.
 
 ## Development Commands
 
-### Build Commands
-- `cargo build` - Debug build
-- `cargo build --release` - Release build with optimizations
-- `cargo build --features gui` - Build with GUI support (egui)
-- `cargo run` - Run with default TUI interface
-- `cargo run --features gui -- --gui` - Run with GUI interface
+### Environment Setup
+- `uv sync` - Install dependencies and sync virtual environment
+- `uv sync --dev` - Install with development dependencies
+- `uv run python -m git_patchdance` - Run the application
 
-### Testing
-- `cargo test` - Run all tests
-- `cargo test --features gui` - Run tests with GUI features
-- `cargo test --test integration` - Run integration tests only
-- `cargo test test_name` - Run specific test
+### Build Commands
+- `uv build` - Build distribution packages
+- `uv run python -m build` - Alternative build command
+
+### Testing (Test-First Development)
+- `uv run pytest` - Run all tests
+- `uv run pytest tests/unit/` - Run unit tests only
+- `uv run pytest tests/integration/` - Run integration tests only
+- `uv run pytest -k test_name` - Run specific test
+- `uv run pytest --cov` - Run tests with coverage
+- `uv run pytest --cov-report=html` - Generate HTML coverage report
 
 ### Code Quality
-- `cargo fmt` - Format code
-- `cargo clippy` - Run linter
-- `cargo clippy --features gui` - Run linter with all features
-- `cargo doc --open` - Generate and open documentation
+- `uv run ruff format` - Format code
+- `uv run ruff check` - Run linter
+- `uv run ruff check --fix` - Run linter with auto-fix
+- `uv run mypy src/` - Type checking
 
 ### Documentation
-- `mkdocs serve` - Serve documentation locally (requires `pip install mkdocs mkdocs-material mkdocs-mermaid2-plugin`)
-- `mkdocs build` - Build static documentation
+- `uv run mkdocs serve` - Serve documentation locally
+- `uv run mkdocs build` - Build static documentation
 
 ## Architecture
 
 ### Core Structure
-The codebase follows a layered architecture:
+The codebase follows a layered architecture using Python:
 
-- **UI Layer**: Terminal (ratatui/crossterm) and GUI (egui) interfaces
-- **Application Layer**: State management and command handling
+- **UI Layer**: Textual-based terminal interface
+- **Application Layer**: State management and event handling
 - **Domain Layer**: Patch management, git operations, and diff engine
-- **Infrastructure Layer**: git2 bindings, filesystem, and logging
+- **Infrastructure Layer**: GitPython bindings, filesystem, and logging
 
 ### Key Components
 
-#### Patch Manager (`src/patch_manager/`)
-- Core business logic for patch extraction and application
-- Handles patch operations: move, split, create, merge commits
-- Manages conflict detection and resolution
+#### Core Package (`src/git_patchdance/core/`)
+- **models.py**: Data models using dataclasses for state management
+- **services.py**: Abstract service interfaces and implementations
+- **errors.py**: Custom exception hierarchy
+- **events.py**: Application event system
 
-#### Git Service (`src/git_service/`)
-- High-level git repository operations
+#### Git Service (`src/git_patchdance/git/`)
+- High-level git repository operations using GitPython
 - Repository state management and validation
-- Atomic operations with rollback capability
+- Async operations for UI responsiveness
 
-#### Diff Engine (`src/diff_engine/`) 
-- Parses and analyzes git diffs
-- Extracts individual file changes and hunks
-- Supports partial patch selection
+#### TUI Interface (`src/git_patchdance/tui/`)
+- Textual-based terminal user interface
+- Async event handling and keyboard navigation
+- Responsive design with proper layout management
 
-### Data Models
+### Data Models (Python)
 
 #### Core Types
-```rust
-pub struct CommitId(pub git2::Oid);
-pub struct PatchId(pub String);
-pub struct Repository { path, git_repo, current_branch, is_dirty }
-pub struct Patch { id, source_commit, target_file, hunks, mode_change }
+```python
+@dataclass
+class CommitId:
+    value: str
+    
+@dataclass 
+class Repository:
+    path: Path
+    current_branch: str
+    is_dirty: bool
+    head_commit: Optional[CommitId]
+
+@dataclass
+class Patch:
+    id: PatchId
+    source_commit: CommitId
+    target_file: Path
+    hunks: list[Hunk]
+    mode_change: Optional[ModeChange]
 ```
 
 #### Operations
-```rust
-pub enum Operation {
-    MovePatch { patch_id, from_commit, to_commit, position },
-    SplitCommit { source_commit, new_commits },
-    CreateCommit { patches, message, position },
-    MergeCommits { commit_ids, message },
-}
+```python
+@dataclass
+class MovePatch:
+    patch_id: PatchId
+    from_commit: CommitId
+    to_commit: CommitId
+    position: InsertPosition
+
+Operation = Union[MovePatch, SplitCommit, CreateCommit, MergeCommits]
 ```
 
-## Features & Configuration
+## Dependencies
 
-### Default Features
-- `tui` - Terminal UI (enabled by default)
+### Core Dependencies
+- **Git**: GitPython for repository operations
+- **Async**: asyncio for async operations
+- **UI**: Textual for modern terminal UI
+- **CLI**: Click for command-line interface
+- **Type Checking**: mypy for static analysis
 
-### Optional Features  
-- `gui` - Graphical UI using egui/eframe
+### Development Dependencies
+- **Testing**: pytest + pytest-asyncio for async testing
+- **Code Quality**: ruff for formatting and linting
+- **Build**: hatchling for packaging
+- **Package Management**: uv for dependency management
 
-### Dependencies
-- **Git**: git2 crate for repository operations
-- **Async**: tokio runtime for async operations
-- **UI**: ratatui for TUI, egui for GUI
-- **CLI**: clap for command-line parsing
-- **Serialization**: serde for configuration
+## Testing Approach (Test-First Development)
 
-## Testing Approach
+The project uses comprehensive test-first development with:
+- **Unit tests** in `tests/unit/` for individual components
+- **Integration tests** in `tests/integration/` for end-to-end scenarios
+- **Test utilities** for creating test repositories with controlled history
+- **Async test support** with pytest-asyncio for async operations
+- **Coverage reporting** to ensure comprehensive test coverage
 
-The project uses comprehensive testing with:
-- Unit tests embedded in modules (`#[cfg(test)]`)
-- Integration tests in `tests/` directory
-- Test utilities for creating test repositories
-- Async test support with `#[tokio::test]`
+### Test Structure
+```
+tests/
+├── unit/
+│   ├── test_models.py          # Test dataclass models
+│   ├── test_git_service.py     # Test git operations
+│   └── test_app_state.py       # Test application state
+├── integration/
+│   ├── test_full_workflow.py   # End-to-end patch operations
+│   └── test_tui_interactions.py # TUI behavior testing
+└── conftest.py                 # Shared test fixtures
+```
 
-### Test Repository Creation
-Tests use `TestRepository` helper for creating git repositories with controlled history and commit data.
+### Test-First Workflow
+1. **Write tests first** before implementing functionality
+2. **Use fixtures** for consistent test data and repositories
+3. **Mock external dependencies** (git operations, filesystem)
+4. **Test async operations** with proper async/await patterns
 
 ## Development Notes
 
-- All git operations are designed to be atomic with rollback capability
-- Caching strategy implemented for frequently accessed git objects
-- Lazy loading for large repositories and commit histories
-- Comprehensive error handling with custom error types
-- Async-first design for UI responsiveness during git operations
+- **Test-driven development**: Write tests before implementation
+- **Dataclasses for state**: Use dataclasses for models, not serialization
+- **Async-first design**: UI responsiveness during git operations
+- **Type hints**: Comprehensive type annotations for better tooling
+- **Error handling**: Custom exception hierarchy for different error types
+- **GitPython integration**: Async wrappers around GitPython operations
+
+## Workflow Tips
+- Don't run the terminal TUI in your own terminal, ask me to test instead
+- Always write tests first, then implement the functionality
+- Use `uv run pytest --cov` to check test coverage
+- Run `uv run mypy src/` before committing to catch type errors
