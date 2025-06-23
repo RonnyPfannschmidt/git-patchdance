@@ -24,36 +24,28 @@ class GitService(ABC):
 
     @abstractmethod
     async def get_commit_graph(
-        self,
-        repository: Repository,
-        limit: int | None = None
+        self, repository: Repository, limit: int | None = None
     ) -> CommitGraph:
         """Get the commit graph for the repository."""
         pass
 
     @abstractmethod
     async def get_commit_info(
-        self,
-        repository: Repository,
-        commit_id: CommitId
+        self, repository: Repository, commit_id: CommitId
     ) -> CommitInfo:
         """Get detailed information about a specific commit."""
         pass
 
     @abstractmethod
     async def get_patches(
-        self,
-        repository: Repository,
-        commit_id: CommitId
+        self, repository: Repository, commit_id: CommitId
     ) -> list[Patch]:
         """Get patches for a specific commit."""
         pass
 
     @abstractmethod
     async def apply_operation(
-        self,
-        repository: Repository,
-        operation: Operation
+        self, repository: Repository, operation: Operation
     ) -> OperationResult:
         """Apply an operation to the repository."""
         pass

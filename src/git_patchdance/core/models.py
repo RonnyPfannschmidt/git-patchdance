@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
 from enum import Enum
-from pathlib import Path
-from typing import Union
+from typing import TYPE_CHECKING, NewType
+
+if TYPE_CHECKING:
+    from datetime import datetime
+    from pathlib import Path
 
 
 @dataclass
@@ -23,10 +25,6 @@ class CommitId:
         """Get the full commit ID."""
         return self.value
 
-    def __str__(self) -> str:
-        """String representation uses short format."""
-        return self.short()
-
 
 @dataclass
 class CommitInfo:
@@ -42,7 +40,7 @@ class CommitInfo:
 
     def summary(self) -> str:
         """Get the commit message summary (first line)."""
-        return self.message.split('\n', 1)[0] if self.message else ""
+        return self.message.split("\n", 1)[0] if self.message else ""
 
     def is_merge(self) -> bool:
         """Check if this is a merge commit (has multiple parents)."""
@@ -59,15 +57,7 @@ class Repository:
     head_commit: CommitId | None
 
 
-@dataclass
-class PatchId:
-    """Represents a patch identifier."""
-
-    value: str
-
-    def __str__(self) -> str:
-        """String representation."""
-        return self.value
+PatchId = NewType("PatchId", str)
 
 
 @dataclass
@@ -93,14 +83,18 @@ class DiffLine:
         return cls(content=content, line_type="deletion")
 
 
+@dataclass(frozen=True)
+class LineRun:
+    start: int
+    lines: int
+
+
 @dataclass
 class Hunk:
     """Represents a hunk in a diff."""
 
-    old_start: int
-    old_lines: int
-    new_start: int
-    new_lines: int
+    old: LineRun
+    new: LineRun
     lines: list[DiffLine]
     context: str
 
@@ -194,7 +188,7 @@ class MergeCommits:
 
 
 # Union type for all operations
-Operation = Union[MovePatch, SplitCommit, CreateCommit, MergeCommits]
+Operation = MovePatch | SplitCommit | CreateCommit | MergeCommits
 
 
 class ConflictKind(Enum):

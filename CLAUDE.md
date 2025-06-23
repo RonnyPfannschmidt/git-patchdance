@@ -52,6 +52,8 @@ The codebase follows a layered architecture using Python:
 - **services.py**: Abstract service interfaces and implementations
 - **errors.py**: Custom exception hierarchy
 - **events.py**: Application event system
+- always read the core packages for best context
+
 
 #### Git Service (`src/git_patchdance/git/`)
 - High-level git repository operations using GitPython
@@ -63,41 +65,7 @@ The codebase follows a layered architecture using Python:
 - Async event handling and keyboard navigation
 - Responsive design with proper layout management
 
-### Data Models (Python)
 
-#### Core Types
-```python
-@dataclass
-class CommitId:
-    value: str
-    
-@dataclass 
-class Repository:
-    path: Path
-    current_branch: str
-    is_dirty: bool
-    head_commit: Optional[CommitId]
-
-@dataclass
-class Patch:
-    id: PatchId
-    source_commit: CommitId
-    target_file: Path
-    hunks: list[Hunk]
-    mode_change: Optional[ModeChange]
-```
-
-#### Operations
-```python
-@dataclass
-class MovePatch:
-    patch_id: PatchId
-    from_commit: CommitId
-    to_commit: CommitId
-    position: InsertPosition
-
-Operation = Union[MovePatch, SplitCommit, CreateCommit, MergeCommits]
-```
 
 ## Dependencies
 
@@ -150,6 +118,7 @@ tests/
 - **Type hints**: Comprehensive type annotations for better tooling
 - **Error handling**: Custom exception hierarchy for different error types
 - **GitPython integration**: Async wrappers around GitPython operations
+- **Using mocks is prohibited**
 
 ## Workflow Tips
 - Don't run the terminal TUI in your own terminal, ask me to test instead

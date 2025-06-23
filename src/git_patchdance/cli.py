@@ -16,6 +16,7 @@ from .tui.app import TuiApp
     "-p",
     type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
     help="Path to git repository (default: current directory)",
+    default=".",
 )
 @click.option(
     "--gui",
@@ -23,15 +24,17 @@ from .tui.app import TuiApp
     help="Launch GUI interface (not yet implemented)",
 )
 @click.version_option()
-def main(path: Path | None = None, gui: bool = False) -> None:
+def main(path: Path, gui: bool = False) -> None:
     """Interactive terminal tool for git patch management.
-    
+
     Git Patchdance allows you to interactively move patches between commits,
     split commits, and reorganize git history through an intuitive interface.
     """
     if gui:
         click.echo("GUI interface not yet implemented. Using TUI.", err=True)
-
+    if not sys.stdout.isatty():
+        click.echo("This application requires a terminal interface to run.", err=True)
+        sys.exit(1)
     try:
         asyncio.run(run_tui(path))
     except KeyboardInterrupt:
@@ -45,10 +48,11 @@ def main(path: Path | None = None, gui: bool = False) -> None:
         sys.exit(1)
 
 
-async def run_tui(path: Path | None = None) -> None:
+async def run_tui(path: Path) -> None:
     """Run the TUI application."""
-    app = TuiApp()
-    await app.run(str(path) if path else None)
+
+    app = TuiApp(initial_path=path)
+    await app.run_async()
 
 
 if __name__ == "__main__":

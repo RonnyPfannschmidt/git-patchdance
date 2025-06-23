@@ -29,7 +29,7 @@ from ..core.services import GitService
 class GitServiceImpl(GitService):
     """Implementation of GitService using GitPython."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._repo_cache: dict[Path, Repo] = {}
 
     async def open_repository(self, path: Path | None = None) -> Repository:
@@ -59,21 +59,17 @@ class GitServiceImpl(GitService):
             )
 
         except InvalidGitRepositoryError:
-            raise RepositoryNotFound(repo_path)
+            raise RepositoryNotFound(repo_path) from None
         except GitCommandError as e:
-            raise GitOperationError("open_repository", str(e))
+            raise GitOperationError("open_repository") from e
 
     async def get_commit_graph(
-        self,
-        repository: Repository,
-        limit: int | None = None
+        self, repository: Repository, limit: int | None = None
     ) -> CommitGraph:
         """Get the commit graph for the repository."""
         try:
             repo = await asyncio.to_thread(self._get_repo, repository.path)
-            commits = await asyncio.to_thread(
-                self._get_commits, repo, limit or 100
-            )
+            commits = await asyncio.to_thread(self._get_commits, repo, limit or 100)
 
             if not commits:
                 raise NoCommitsFound()
@@ -84,12 +80,10 @@ class GitServiceImpl(GitService):
             )
 
         except GitCommandError as e:
-            raise GitOperationError("get_commit_graph", str(e))
+            raise GitOperationError("get_commit_graph") from e
 
     async def get_commit_info(
-        self,
-        repository: Repository,
-        commit_id: CommitId
+        self, repository: Repository, commit_id: CommitId
     ) -> CommitInfo:
         """Get detailed information about a specific commit."""
         try:
@@ -97,13 +91,13 @@ class GitServiceImpl(GitService):
             commit = await asyncio.to_thread(repo.commit, commit_id.value)
             return await asyncio.to_thread(self._convert_commit, commit)
 
-        except Exception:
-            raise InvalidCommitId(commit_id.value)
+        except Exception as e:
+            raise InvalidCommitId(commit_id.value) from e
 
     async def get_patches(
         self,
-        repository: Repository,
-        commit_id: CommitId
+        repository: Repository,  # noqa: ARG002
+        commit_id: CommitId,  # noqa: ARG002
     ) -> list[Patch]:
         """Get patches for a specific commit."""
         # TODO: Implement patch extraction from commit diffs
@@ -111,8 +105,8 @@ class GitServiceImpl(GitService):
 
     async def apply_operation(
         self,
-        repository: Repository,
-        operation: Operation
+        repository: Repository,  # noqa: ARG002
+        operation: Operation,  # noqa: ARG002
     ) -> OperationResult:
         """Apply an operation to the repository."""
         # TODO: Implement operation application
@@ -138,7 +132,7 @@ class GitServiceImpl(GitService):
             self._repo_cache[path] = repo
             return repo
         except InvalidGitRepositoryError:
-            raise RepositoryNotFound(path)
+            raise RepositoryNotFound(path) from None
 
     def _get_repo(self, path: Path) -> Repo:
         """Get repository from cache or discover it."""
@@ -173,7 +167,7 @@ class GitServiceImpl(GitService):
                 commit_info = self._convert_commit(commit)
                 commits.append(commit_info)
         except Exception as e:
-            raise GitOperationError("get_commits", str(e))
+            raise GitOperationError("get_commits") from e
 
         return commits
 
@@ -188,26 +182,30 @@ class GitServiceImpl(GitService):
             if commit.parents:
                 # Compare with first parent to get changed files
                 diffs = commit.parents[0].diff(commit)
-                files_changed = [diff.a_path or diff.b_path for diff in diffs if diff.a_path or diff.b_path]
+                files_changed = [
+                    val for diff in diffs if (val := diff.a_path or diff.b_path)
+                ]
             else:
                 # Initial commit - get all files
-                files_changed = list(commit.stats.files.keys())
+                files_changed = [str(x) for x in commit.stats.files]
         except Exception:
             # Fallback if diff fails
             files_changed = []
-
         # Convert timestamp
-        timestamp = datetime.fromtimestamp(
-            commit.committed_date,
-            tz=UTC
-        )
+        timestamp = datetime.fromtimestamp(commit.committed_date, tz=UTC)
+
+        match commit.message:
+            case bytes(binary_message):
+                message = binary_message.decode("utf-8", errors="replace")
+            case str(message):
+                pass
 
         return CommitInfo(
             id=CommitId(commit.hexsha),
-            message=commit.message,
-            author=commit.author.name,
-            email=commit.author.email,
+            message=message,
+            author=commit.author.name or "",
+            email=commit.author.email or "",
             timestamp=timestamp,
-            parent_ids=parent_ids,
+            parent_ids=parent_ids or [],
             files_changed=files_changed,
         )

@@ -5,6 +5,7 @@ from pathlib import Path
 
 class GitPatchError(Exception):
     """Base exception for Git Patchdance errors."""
+
     pass
 
 
@@ -42,10 +43,10 @@ class ApplicationError(GitPatchError):
 class GitOperationError(GitPatchError):
     """Raised when a git operation fails."""
 
-    def __init__(self, operation: str, message: str) -> None:
+    def __init__(self, operation: str) -> None:
         self.operation = operation
-        self.message = message
-        super().__init__(f"Git operation '{operation}' failed: {message}")
+
+        super().__init__(f"Git operation '{operation}' failed:")
 
 
 class PatchError(GitPatchError):
