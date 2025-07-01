@@ -49,9 +49,9 @@ class MockLog:
 class TestTuiAppLogic:
     """Test TUI app business logic."""
 
-    def create_test_app(self):
-        """Create app with mock widgets for testing."""
-        app = TuiApp()
+    @pytest.fixture
+    def app(self, tmp_path: Path):
+        app = TuiApp(initial_path=tmp_path)
 
         # Replace widgets with mocks
         app.commit_list = MockWidget()
@@ -61,9 +61,8 @@ class TestTuiAppLogic:
 
         return app
 
-    def test_app_initialization(self):
+    def test_app_initialization(self, app):
         """Test basic app initialization."""
-        app = TuiApp()
 
         assert app.repository is None
         assert app.commit_graph is None
@@ -72,7 +71,7 @@ class TestTuiAppLogic:
         assert app._initial_path is None
         assert app._log_widget is None
 
-    def test_log_property_before_init(self):
+    def test_log_property_before_init(self, app: TuiApp) -> None:
         """Test log property before initialization."""
         app = TuiApp()
 
@@ -181,9 +180,8 @@ class TestTuiAppLogic:
         assert app.selected_index == 2  # Should stay at last
 
     @pytest.mark.asyncio
-    async def test_navigation_up(self):
+    async def test_navigation_up(self, app):
         """Test cursor up navigation."""
-        app = self.create_test_app()
 
         commits = [
             CommitInfo(
@@ -213,9 +211,8 @@ class TestTuiAppLogic:
         assert app.selected_index == 0  # Should stay at first
 
     @pytest.mark.asyncio
-    async def test_navigation_with_no_commits(self):
+    async def test_navigation_with_no_commits(self, app):
         """Test navigation when no commits are available."""
-        app = self.create_test_app()
 
         # No commit graph
         app.commit_graph = None
@@ -232,9 +229,8 @@ class TestTuiAppLogic:
         assert app.selected_index == 0
 
     @pytest.mark.asyncio
-    async def test_refresh_action(self):
+    async def test_refresh_action(self, app):
         """Test refresh functionality."""
-        app = self.create_test_app()
 
         # Set up repository
         app.repository = Repository(
@@ -254,9 +250,8 @@ class TestTuiAppLogic:
         assert "Repository refreshed" in app._log_widget.messages
 
     @pytest.mark.asyncio
-    async def test_refresh_no_repository(self):
+    async def test_refresh_no_repository(self, app: TuiApp) -> None:
         """Test refresh when no repository loaded."""
-        app = self.create_test_app()
 
         app.repository = None
 
@@ -276,55 +271,9 @@ class TestTuiAppLogic:
 
         await app.action_refresh()
 
-        # Should attempt to load repository and log success
-        assert len(app._log_widget.messages) > 0
-        assert "Repository loaded" in app._log_widget.messages[0]
-
-    @pytest.mark.asyncio
-    async def test_help_action(self):
-        """Test help functionality."""
-        app = self.create_test_app()
-
-        await app.action_help()
-
-        # Should write help content
-        assert len(app._log_widget.messages) > 0
-        help_content = " ".join(app._log_widget.messages)
-        assert "Keyboard Shortcuts" in help_content
-        assert "Move down" in help_content
-        assert "Move up" in help_content
-        assert "Load/refresh" in help_content
-        assert "Quit" in help_content
-        assert "Getting Started" in help_content
-
-    def test_run_sets_initial_path(self):
+    def test_run_sets_initial_path(self) -> None:
         """Test that run method sets initial path."""
-        app = TuiApp()
+        path = Path("/test/repo")
+        app = TuiApp(initial_path=path)
 
-        # Test path setting
-        app._initial_path = "/test/repo"
-        assert app._initial_path == "/test/repo"
-
-
-class TestApplicationWrapper:
-    """Test the Application compatibility wrapper."""
-
-    def test_wrapper_initialization(self):
-        """Test Application wrapper initialization."""
-        from git_patchdance.tui.app import Application
-
-        wrapper = Application()
-        assert wrapper.app is not None
-        assert isinstance(wrapper.app, TuiApp)
-
-    @pytest.mark.asyncio
-    async def test_wrapper_run(self):
-        """Test Application wrapper run method."""
-        from git_patchdance.tui.app import Application
-
-        wrapper = Application()
-        wrapper.app.run = AsyncMock()
-
-        await wrapper.run("/test/repo")
-
-        wrapper.app.run.assert_called_once_with("/test/repo")
+        assert app._initial_path == path

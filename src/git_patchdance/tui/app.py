@@ -10,9 +10,10 @@ from textual.reactive import reactive
 from textual.screen import ModalScreen
 from textual.widgets import Footer, Header, Label, ListItem, ListView, Log, Static
 
+from git_patchdance.git.service import GitService
+
 from ..core.errors import GitPatchError
 from ..core.models import CommitGraph, CommitInfo, Repository
-from ..git.service import GitServiceImpl
 
 
 class HelpModal(ModalScreen[None]):
@@ -130,7 +131,8 @@ class TuiApp(App[None]):
         padding: 1;
     }
     """
-
+    TITLE = "Git Patchdance"
+    SUB_TITLE = "Interactive git patch management"
     BINDINGS = [
         Binding("q", "quit", "Quit"),
         Binding("j,down", "cursor_down", "Down"),
@@ -139,14 +141,14 @@ class TuiApp(App[None]):
         Binding("?", "help", "Help"),
     ]
 
+    selected_index: reactive[int] = reactive(0)
+
     def __init__(self, initial_path: Path, **kwargs: Any):
         super().__init__(**kwargs)
-        self.git_service = GitServiceImpl()
+        self.git_service = GitService()
         self.repository: Repository | None = None
         self.commit_graph: CommitGraph | None = None
-        self.selected_index = 0
         self._initial_path: Path = initial_path
-        self.app_log: Log | None = None
 
     def compose(self) -> ComposeResult:
         """Create the layout."""

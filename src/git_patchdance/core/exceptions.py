@@ -5,7 +5,6 @@ for handling errors during git operations, patch management, and other operation
 """
 
 import typing
-from pathlib import Path
 
 if typing.TYPE_CHECKING:
     from .models import Conflict  # noqa: F401
@@ -37,7 +36,7 @@ class IoError(GitPatchError):
 
     Attributes:
         message: Human-readable error description
-        """
+    """
 
 
 class PatchError(GitPatchError):
@@ -50,6 +49,7 @@ class PatchError(GitPatchError):
     Attributes:
         reason: Detailed description of why the patch operation failed
     """
+
 
 class ConflictError(GitPatchError):
     """Conflict detected during operation.
@@ -78,10 +78,6 @@ class RepositoryNotFound(GitPatchError):
         path: The path where the repository was expected
     """
 
-    def __init__(self, path: Path):
-        super().__init__(f"Repository not found at path: {path}")
-        self.path = path
-
 
 class InvalidCommitId(GitPatchError):
     """Invalid commit ID provided.
@@ -93,10 +89,6 @@ class InvalidCommitId(GitPatchError):
         commit_id: The invalid commit ID that was provided
     """
 
-    def __init__(self, commit_id: str):
-        super().__init__(f"Invalid commit ID: {commit_id}")
-        self.commit_id = commit_id
-
 
 class OperationCancelled(GitPatchError):
     """Operation cancelled by user.
@@ -104,6 +96,3 @@ class OperationCancelled(GitPatchError):
     Raised when a long-running operation is cancelled by user
     request, such as through UI interaction or signal handling.
     """
-
-    def __init__(self) -> None:
-        super().__init__("Operation cancelled by user")

@@ -6,7 +6,7 @@ import pytest
 from textual.app import App, ComposeResult
 
 from git_patchdance.core.models import CommitId, CommitInfo
-from git_patchdance.tui.app import CommitDetails, CommitList, StatusBar
+from git_patchdance.tui.app import CommitDetails, CommitList
 
 
 class TestCommitListApp(App):
@@ -17,20 +17,12 @@ class TestCommitListApp(App):
         yield self.commit_list
 
 
-class TestCommitDetailsApp(App):
+class CommitDetailsValidationApp(App):
     """Test app for CommitDetails widget."""
 
     def compose(self) -> ComposeResult:
         self.commit_details = CommitDetails()
         yield self.commit_details
-
-
-class TestStatusBarApp(App):
-    """Test app for StatusBar widget."""
-
-    def compose(self) -> ComposeResult:
-        self.status_bar = StatusBar()
-        yield self.status_bar
 
 
 class TestTuiWidgetsWithApps:
@@ -68,7 +60,7 @@ class TestTuiWidgetsWithApps:
     @pytest.mark.asyncio
     async def test_commit_details_widget(self):
         """Test CommitDetails widget in a Textual app context."""
-        app = TestCommitDetailsApp()
+        app = CommitDetailsValidationApp()
 
         async with app.run_test() as pilot:
             # Test initialization
@@ -92,21 +84,6 @@ class TestTuiWidgetsWithApps:
             content = str(app.commit_details.renderable)
             assert "abc123" in content
             assert "Test commit message" in content
-
-    @pytest.mark.asyncio
-    async def test_status_bar_widget(self):
-        """Test StatusBar widget in a Textual app context."""
-        app = TestStatusBarApp()
-
-        async with app.run_test() as pilot:
-            # Test initialization
-            assert "Ready" in str(app.status_bar.renderable)
-
-            # Test updating status
-            app.status_bar.update("Loading...")
-            await pilot.pause()
-
-            assert "Loading..." in str(app.status_bar.renderable)
 
     @pytest.mark.asyncio
     async def test_commit_list_empty_state(self):
@@ -149,7 +126,7 @@ class TestTuiWidgetsWithApps:
     @pytest.mark.asyncio
     async def test_commit_details_with_complex_commit(self):
         """Test CommitDetails with complex commit info."""
-        app = TestCommitDetailsApp()
+        app = CommitDetailsValidationApp()
 
         async with app.run_test() as pilot:
             commit = CommitInfo(

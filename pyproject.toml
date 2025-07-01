@@ -75,14 +75,12 @@ path = "src/git_patchdance/__init__.py"
 packages = ["src/git_patchdance"]
 
 [tool.pytest.ini_options]
-minversion = "7.0"
+minversion = "8.4"
 addopts = [
     "--strict-markers",
     "--strict-config",
     "--cov=git_patchdance",
     "--cov-report=term-missing",
-    "--cov-report=html",
-    "--cov-report=xml",
 ]
 testpaths = ["tests"]
 asyncio_mode = "auto"
@@ -154,3 +152,16 @@ line-ending = "auto"
 
 [tool.ruff.lint.isort]
 known-first-party = ["git_patchdance"]
+
+
+[tool.hatch.envs.default]
+uv = true
+[tool.hatch.envs.default.scripts]
+lint = "ruff check --fix"
+format = "ruff format"
+type = "mypy src tests"
+test = "pytest"
+
+all = ["lint", "format", "type", "test"]
+
+

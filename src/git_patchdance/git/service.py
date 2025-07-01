@@ -23,10 +23,9 @@ from ..core.models import (
     Patch,
     Repository,
 )
-from ..core.services import GitService
 
 
-class GitServiceImpl(GitService):
+class GitService:
     """Implementation of GitService using GitPython."""
 
     def __init__(self) -> None:

@@ -16,7 +16,6 @@ from .models import (
     PatchId,
     Repository,
 )
-from .services import GitService
 
 __all__ = [
     "GitPatchError",
