@@ -1,5 +1,6 @@
 """Textual-based TUI application for Git Patchdance."""
 
+import asyncio
 from pathlib import Path
 from typing import Any
 
@@ -211,11 +212,13 @@ class TuiApp(App[None]):
 
             # Use current directory if no path provided
 
-            self.repository = await self.git_service.open_repository(path)
+            self.repository = await asyncio.to_thread(
+                self.git_service.open_repository, path
+            )
 
             self.status_bar.update("Loading commits...")
-            self.commit_graph = await self.git_service.get_commit_graph(
-                self.repository, limit=50
+            self.commit_graph = await asyncio.to_thread(
+                self.git_service.get_commit_graph, self.repository, 50
             )
 
             self.commit_list.commits = self.commit_graph.commits

@@ -3,7 +3,7 @@
 from datetime import datetime
 from pathlib import Path
 from typing import Any
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 
@@ -123,8 +123,8 @@ class TestTuiAppLogic:
         )
 
         # Mock git service
-        app.git_service.open_repository = AsyncMock(return_value=test_repo)  # type: ignore[method-assign]
-        app.git_service.get_commit_graph = AsyncMock(return_value=test_graph)  # type: ignore[method-assign]
+        app.git_service.open_repository = Mock(return_value=test_repo)  # type: ignore[method-assign]
+        app.git_service.get_commit_graph = Mock(return_value=test_graph)  # type: ignore[method-assign]
 
         # Test loading
         await app.load_repository(Path("/test/repo"))
@@ -142,7 +142,7 @@ class TestTuiAppLogic:
         app = self.create_test_app()
 
         # Mock failure
-        app.git_service.open_repository = AsyncMock(  # type: ignore[method-assign]
+        app.git_service.open_repository = Mock(  # type: ignore[method-assign]
             side_effect=GitPatchError("Repository not found")
         )
 
@@ -274,8 +274,8 @@ class TestTuiAppLogic:
         )
         test_graph = CommitGraph(commits=[], current_branch="main")
 
-        app.git_service.open_repository = AsyncMock(return_value=test_repo)  # type: ignore[method-assign]
-        app.git_service.get_commit_graph = AsyncMock(return_value=test_graph)  # type: ignore[method-assign]
+        app.git_service.open_repository = Mock(return_value=test_repo)  # type: ignore[method-assign]
+        app.git_service.get_commit_graph = Mock(return_value=test_graph)  # type: ignore[method-assign]
 
         await app.action_refresh()
 

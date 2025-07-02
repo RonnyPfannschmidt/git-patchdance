@@ -1,6 +1,5 @@
 """Git service implementation using GitPython."""
 
-import asyncio
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -31,19 +30,17 @@ class GitService:
     def __init__(self) -> None:
         self._repo_cache: dict[Path, Repo] = {}
 
-    async def open_repository(self, path: Path | None = None) -> Repository:
+    def open_repository(self, path: Path | None = None) -> Repository:
         """Open a git repository at the given path."""
+        # Use current directory if no path provided
+        repo_path = path or Path.cwd()
+
         try:
-            # Use current directory if no path provided
-            repo_path = path or Path.cwd()
-
-            # Run git operations in thread pool to avoid blocking
-            repo = await asyncio.to_thread(self._discover_repository, repo_path)
-
-            # Get repository information
-            current_branch = await asyncio.to_thread(self._get_current_branch, repo)
-            is_dirty = await asyncio.to_thread(self._is_repository_dirty, repo)
-            head_commit = await asyncio.to_thread(self._get_head_commit, repo)
+            # Get repository and information
+            repo = self._discover_repository(repo_path)
+            current_branch = self._get_current_branch(repo)
+            is_dirty = self._is_repository_dirty(repo)
+            head_commit = self._get_head_commit(repo)
 
             # Get the working directory path
             work_dir = repo.working_dir
@@ -62,13 +59,13 @@ class GitService:
         except GitCommandError as e:
             raise GitOperationError("open_repository") from e
 
-    async def get_commit_graph(
+    def get_commit_graph(
         self, repository: Repository, limit: int | None = None
     ) -> CommitGraph:
         """Get the commit graph for the repository."""
         try:
-            repo = await asyncio.to_thread(self._get_repo, repository.path)
-            commits = await asyncio.to_thread(self._get_commits, repo, limit or 100)
+            repo = self._get_repo(repository.path)
+            commits = self._get_commits(repo, limit or 100)
 
             if not commits:
                 raise NoCommitsFound()
@@ -81,19 +78,19 @@ class GitService:
         except GitCommandError as e:
             raise GitOperationError("get_commit_graph") from e
 
-    async def get_commit_info(
+    def get_commit_info(
         self, repository: Repository, commit_id: CommitId
     ) -> CommitInfo:
         """Get detailed information about a specific commit."""
         try:
-            repo = await asyncio.to_thread(self._get_repo, repository.path)
-            commit = await asyncio.to_thread(repo.commit, commit_id.full)
-            return await asyncio.to_thread(self._convert_commit, commit)
+            repo = self._get_repo(repository.path)
+            commit = repo.commit(commit_id.full)
+            return self._convert_commit(commit)
 
         except Exception as e:
             raise InvalidCommitId(commit_id.full) from e
 
-    async def get_patches(
+    def get_patches(
         self,
         repository: Repository,  # noqa: ARG002
         commit_id: CommitId,  # noqa: ARG002
@@ -102,7 +99,7 @@ class GitService:
         # TODO: Implement patch extraction from commit diffs
         return []
 
-    async def apply_operation(
+    def apply_operation(
         self,
         repository: Repository,  # noqa: ARG002
         operation: Operation,  # noqa: ARG002
@@ -111,12 +108,12 @@ class GitService:
         # TODO: Implement operation application
         raise ApplicationError("Operations not yet implemented")
 
-    async def validate_repository(self, repository: Repository) -> bool:
+    def validate_repository(self, repository: Repository) -> bool:
         """Validate that the repository is in a good state."""
         try:
-            repo = await asyncio.to_thread(self._get_repo, repository.path)
+            repo = self._get_repo(repository.path)
             # Basic validation - check if we can access head
-            await asyncio.to_thread(lambda: repo.head.commit)
+            _ = repo.head.commit
             return True
         except Exception:
             return False
@@ -196,7 +193,7 @@ class GitService:
         match commit.message:
             case bytes(binary_message):
                 message = binary_message.decode("utf-8", errors="replace")
-            case str(message):
+            case str() as message:
                 pass
 
         return CommitInfo(
