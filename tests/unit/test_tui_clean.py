@@ -3,12 +3,12 @@
 from datetime import datetime
 from pathlib import Path
 from typing import Any
-from unittest.mock import AsyncMock, Mock
+from unittest.mock import AsyncMock
 
 import pytest
 
-from git_patchdance.core.errors import GitPatchError
-from git_patchdance.core.models import CommitGraph, CommitId, CommitInfo, Repository
+from git_patchdance.core.models import CommitGraph, CommitId, CommitInfo
+from git_patchdance.git.fake_repository import FakeRepository
 from git_patchdance.tui.app import TuiApp
 
 
@@ -50,11 +50,11 @@ class MockLog:
 class TestTuiAppLogic:
     """Test TUI app business logic."""
 
-    def create_test_app(self, path: Path | None = None) -> TuiApp:
+    def create_test_app(self, repository: FakeRepository | None = None) -> TuiApp:
         """Create a test app with mocked widgets."""
-        if path is None:
-            path = Path("/tmp/test")
-        app = TuiApp(initial_path=path)
+        if repository is None:
+            repository = FakeRepository.create_test_repository()
+        app = TuiApp(git_repository=repository)
 
         # Replace widgets with mocks
         app.commit_list = MockWidget()  # type: ignore[assignment]
@@ -66,22 +66,21 @@ class TestTuiAppLogic:
         return app
 
     @pytest.fixture
-    def app(self, tmp_path: Path) -> TuiApp:
-        return self.create_test_app(tmp_path)
+    def app(self) -> TuiApp:
+        return self.create_test_app()
 
     def test_app_initialization(self, app: TuiApp) -> None:
         """Test basic app initialization."""
 
-        assert app.repository is None
+        assert app.git_repository is not None
         assert app.commit_graph is None
         assert app.selected_index == 0
-        assert app.git_service is not None
-        assert app._initial_path is not None
         assert app._log_widget is not None  # type: ignore[attr-defined]
 
-    def test_log_property_before_init(self, tmp_path: Path) -> None:
+    def test_log_property_before_init(self) -> None:
         """Test log property before initialization."""
-        app = TuiApp(initial_path=tmp_path)
+        fake_repo = FakeRepository.create_test_repository()
+        app = TuiApp(git_repository=fake_repo)
 
         # App should not have app_log widget before compose
         assert not hasattr(app, "app_log")
@@ -95,64 +94,35 @@ class TestTuiAppLogic:
 
     @pytest.mark.asyncio
     async def test_load_repository_success(self) -> None:
-        """Test successful repository loading."""
-        app = self.create_test_app()
-
-        # Create test data
-        test_repo = Repository(
-            path=Path("/test/repo"),
-            current_branch="main",
-            is_dirty=False,
-            head_commit=CommitId("abc123"),
+        """Test successful repository data loading."""
+        # Create fake repository with test data
+        fake_repo = FakeRepository.create_test_repository(
+            path=Path("/test/repo"), commit_count=1
         )
+        app = self.create_test_app(fake_repo)
 
-        test_commits = [
-            CommitInfo(
-                id=CommitId("abc123"),
-                message="Test commit",
-                author="Test Author",
-                email="test@example.com",
-                timestamp=datetime.now(),
-                parent_ids=(),
-                files_changed=["test.py"],
-            )
-        ]
-
-        test_graph = CommitGraph(
-            commits=test_commits, current_branch="main", total_count=1
-        )
-
-        # Mock git service
-        app.git_service.open_repository = Mock(return_value=test_repo)  # type: ignore[method-assign]
-        app.git_service.get_commit_graph = Mock(return_value=test_graph)  # type: ignore[method-assign]
-
-        # Test loading
-        await app.load_repository(Path("/test/repo"))
+        # Test loading repository data
+        await app.load_repository_data()
 
         # Verify state
-        assert app.repository == test_repo
-        assert app.commit_graph == test_graph
+        assert app.git_repository == fake_repo
+        assert app.commit_graph is not None
         assert app.selected_index == 0
-        assert app.commit_list.commits == test_commits
-        assert app.commit_details.data == test_commits[0]  # type: ignore[attr-defined]
+        assert len(app.commit_list.commits) == 1
+        assert app.commit_details.data == app.commit_graph.commits[0]  # type: ignore[attr-defined]
 
     @pytest.mark.asyncio
     async def test_load_repository_failure(self) -> None:
-        """Test repository loading failure."""
-        app = self.create_test_app()
+        """Test repository data loading with error handling."""
+        # Create a fake repository that will raise an error
+        fake_repo = FakeRepository.create_test_repository(commit_count=0)  # No commits
+        app = self.create_test_app(fake_repo)
 
-        # Mock failure
-        app.git_service.open_repository = Mock(  # type: ignore[method-assign]
-            side_effect=GitPatchError("Repository not found")
-        )
+        # Should handle gracefully when no commits (raises NoCommitsFound)
+        await app.load_repository_data()
 
-        # Should not raise error (now handles gracefully)
-        await app.load_repository(Path("/nonexistent"))
-
-        # Should log error
+        # Should log and display error information
         assert len(app.app_log.messages) > 0  # type: ignore[attr-defined]
-        assert "Failed to load repository" in app.app_log.messages[0]  # type: ignore[attr-defined]
-        # Should update commit details with error info
         assert "Failed to load repository" in app.commit_details.data  # type: ignore[attr-defined]
 
     @pytest.mark.asyncio
@@ -240,48 +210,32 @@ class TestTuiAppLogic:
     async def test_refresh_action(self, app: TuiApp) -> None:
         """Test refresh functionality."""
 
-        # Set up repository
-        app.repository = Repository(
-            path=Path("/test/repo"),
-            current_branch="main",
-            is_dirty=False,
-            head_commit=CommitId("abc123"),
-        )
-
-        # Mock load_repository
-        app.load_repository = AsyncMock()  # type: ignore[method-assign]
+        # Mock load_repository_data
+        app.load_repository_data = AsyncMock()  # type: ignore[method-assign]
 
         await app.action_refresh()
 
-        # Should reload repository
-        app.load_repository.assert_called_once_with(Path("/test/repo"))
+        # Should reload repository data
+        app.load_repository_data.assert_called_once()
         assert "Repository refreshed" in app.app_log.messages  # type: ignore[attr-defined]
 
     @pytest.mark.asyncio
     async def test_refresh_no_repository(self, app: TuiApp) -> None:
-        """Test refresh when no repository loaded."""
+        """Test refresh functionality (same as with repository)."""
 
-        app.repository = None
-
-        # Mock git service to simulate loading current directory
-        from pathlib import Path
-
-        test_repo = Repository(
-            path=Path.cwd(),
-            current_branch="main",
-            is_dirty=False,
-            head_commit=CommitId("abc123"),
-        )
-        test_graph = CommitGraph(commits=[], current_branch="main")
-
-        app.git_service.open_repository = Mock(return_value=test_repo)  # type: ignore[method-assign]
-        app.git_service.get_commit_graph = Mock(return_value=test_graph)  # type: ignore[method-assign]
+        # Mock load_repository_data
+        app.load_repository_data = AsyncMock()  # type: ignore[method-assign]
 
         await app.action_refresh()
 
-    def test_run_sets_initial_path(self) -> None:
-        """Test that run method sets initial path."""
-        path = Path("/test/repo")
-        app = TuiApp(initial_path=path)
+        # Should still refresh since repository is always available now
+        app.load_repository_data.assert_called_once()
+        assert "Repository refreshed" in app.app_log.messages  # type: ignore[attr-defined]
 
-        assert app._initial_path == path
+    def test_repository_injection(self) -> None:
+        """Test that repository is properly injected."""
+        fake_repo = FakeRepository.create_test_repository(path=Path("/test/repo"))
+        app = TuiApp(git_repository=fake_repo)
+
+        assert app.git_repository == fake_repo
+        assert app.git_repository.info.path == Path("/test/repo")

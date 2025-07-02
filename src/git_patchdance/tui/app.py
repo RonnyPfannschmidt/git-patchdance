@@ -1,7 +1,6 @@
 """Textual-based TUI application for Git Patchdance."""
 
 import asyncio
-from pathlib import Path
 from typing import Any
 
 from textual.app import App, ComposeResult
@@ -11,10 +10,9 @@ from textual.reactive import reactive
 from textual.screen import ModalScreen
 from textual.widgets import Footer, Header, Label, ListItem, ListView, Log, Static
 
-from git_patchdance.git.service import GitService
-
 from ..core.errors import GitPatchError
-from ..core.models import CommitGraph, CommitInfo, Repository
+from ..core.models import CommitGraph, CommitInfo
+from ..git.repository import GitRepository
 
 
 class HelpModal(ModalScreen[None]):
@@ -144,12 +142,10 @@ class TuiApp(App[None]):
 
     selected_index: reactive[int] = reactive(0)
 
-    def __init__(self, initial_path: Path, **kwargs: Any):
+    def __init__(self, git_repository: GitRepository, **kwargs: Any):
         super().__init__(**kwargs)
-        self.git_service = GitService()
-        self.repository: Repository | None = None
+        self.git_repository = git_repository
         self.commit_graph: CommitGraph | None = None
-        self._initial_path: Path = initial_path
 
     def compose(self) -> ComposeResult:
         """Create the layout."""
@@ -192,33 +188,25 @@ class TuiApp(App[None]):
             "Press 'r' to load a repository\nPress '?' for help"
         )
 
-        # Load repository if path provided - widgets are now available
-        if self._initial_path:
-            try:
-                await self.load_repository(self._initial_path)
-            except Exception as e:
-                # Show full traceback during development
-                import traceback
-
-                tb = traceback.format_exc()
-                self.write_log(f"Error loading repository: {e}")
-                self.write_log(f"Full traceback:\n{tb}")
-                self.status_bar.update(f"Error: {e}")
-
-    async def load_repository(self, path: Path) -> None:
-        """Load git repository."""
+        # Load repository data on startup
         try:
-            self.status_bar.update("Loading repository...")
+            await self.load_repository_data()
+        except Exception as e:
+            # Show full traceback during development
+            import traceback
 
-            # Use current directory if no path provided
+            tb = traceback.format_exc()
+            self.write_log(f"Error loading repository: {e}")
+            self.write_log(f"Full traceback:\n{tb}")
+            self.status_bar.update(f"Error: {e}")
 
-            self.repository = await asyncio.to_thread(
-                self.git_service.open_repository, path
-            )
-
+    async def load_repository_data(self) -> None:
+        """Load repository data."""
+        try:
             self.status_bar.update("Loading commits...")
+
             self.commit_graph = await asyncio.to_thread(
-                self.git_service.get_commit_graph, self.repository, 50
+                self.git_repository.get_commit_graph, 50
             )
 
             self.commit_list.commits = self.commit_graph.commits
@@ -228,7 +216,7 @@ class TuiApp(App[None]):
                 self.commit_details.show_commit(self.commit_graph.commits[0])
                 self.status_bar.update(
                     f"Loaded {len(self.commit_graph.commits)} commits "
-                    f"from {self.repository.current_branch}"
+                    f"from {self.git_repository.info.current_branch}"
                 )
             else:
                 self.commit_details.update("No commits found in repository")
@@ -281,18 +269,12 @@ class TuiApp(App[None]):
             )
 
     async def action_refresh(self) -> None:
-        """Refresh repository data or load repository."""
+        """Refresh repository data."""
         try:
-            if self.repository:
-                # Refresh existing repository
-                await self.load_repository(self.repository.path)
-                self.write_log("Repository refreshed")
-            else:
-                # Load repository from current directory
-                await self.load_repository(Path(self._initial_path))
-                self.write_log("Repository loaded")
+            await self.load_repository_data()
+            self.write_log("Repository refreshed")
         except GitPatchError as e:
-            self.write_log(f"Failed to load/refresh repository: {e}")
+            self.write_log(f"Failed to refresh repository: {e}")
 
     async def on_list_view_selected(self, event: ListView.Selected) -> None:
         """Handle commit selection from ListView."""

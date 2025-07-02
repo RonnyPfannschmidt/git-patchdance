@@ -7,6 +7,7 @@ from pathlib import Path
 import click
 
 from .core.errors import GitPatchError
+from .git.repository import open_repository
 from .tui.app import TuiApp
 
 
@@ -51,7 +52,8 @@ def main(path: Path, gui: bool = False) -> None:
 async def run_tui(path: Path) -> None:
     """Run the TUI application."""
 
-    app = TuiApp(initial_path=path)
+    git_repository = open_repository(path)
+    app = TuiApp(git_repository=git_repository)
     await app.run_async()
 
 
