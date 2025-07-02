@@ -31,6 +31,16 @@ Git Patchdance is an interactive terminal tool for git patch management built in
 - `uv run ruff check --fix` - Run linter with auto-fix
 - `uv run mypy src/` - Type checking
 
+### Pre-commit Hooks
+- `uv run pre-commit install` - Install pre-commit hooks (one-time setup)
+- `uv run pre-commit run --all-files` - Run all hooks on all files
+- Pre-commit automatically runs on git commit with:
+  - Trailing whitespace removal
+  - End-of-file fixing
+  - YAML validation (excluding mkdocs.yml)
+  - Ruff linting and formatting (with pyupgrade rules)
+  - MyPy type checking
+
 ### Documentation
 - `uv run mkdocs serve` - Serve documentation locally
 - `uv run mkdocs build` - Build static documentation

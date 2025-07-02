@@ -155,18 +155,18 @@ async def main():
     # Initialize services
     git_service = GitServiceImpl()
     patch_manager = PatchManager(git_service)
-    
+
     # Open repository
     repo = await git_service.open_repository(Path("."))
-    
+
     # Get commit history
     commit_graph = await git_service.get_commit_graph(repo, limit=10)
-    
+
     # Extract patches from a commit
     if commit_graph.commits:
         commit = commit_graph.commits[0]
         patches = await patch_manager.extract_patches(repo, commit.id)
-        
+
         if patches and len(commit_graph.commits) > 1:
             # Move a patch to another commit
             target_commit = commit_graph.commits[1]
@@ -176,7 +176,7 @@ async def main():
                 to_commit=target_commit.id,
                 position=InsertPosition.AFTER
             )
-            
+
             result = await patch_manager.apply_operation(repo, operation)
             print(f"Operation successful: {result.success}")
 
@@ -197,40 +197,40 @@ async def advanced_patch_workflow():
     git_service = GitServiceImpl()
     patch_manager = PatchManager(git_service)
     repo = await git_service.open_repository(Path("."))
-    
+
     # Get commit history
     commit_graph = await git_service.get_commit_graph(repo, limit=10)
-    
+
     if len(commit_graph.commits) >= 2:
         source_commit = commit_graph.commits[0]
         target_commit = commit_graph.commits[1]
-        
+
         # Extract patches from source commit
         all_patches = await patch_manager.extract_patches(repo, source_commit.id)
-        
+
         # Filter patches for Python files only
         filtered_patches = [
-            patch for patch in all_patches 
+            patch for patch in all_patches
             if patch.target_file.suffix == ".py"
         ]
-        
+
         if filtered_patches:
             # Check for conflicts before applying
             conflicts = await patch_manager.detect_conflicts(
                 repo, filtered_patches, target_commit.id
             )
-            
+
             if conflicts:
                 print(f"Conflicts detected: {len(conflicts)} conflicts")
                 for conflict in conflicts:
                     print(f"  - {conflict.description}")
                 return
-            
+
             # Apply patches if no conflicts
             result = await patch_manager.apply_patches(
                 repo, filtered_patches, target_commit.id
             )
-            
+
             print(f"Applied {len(filtered_patches)} patches to {target_commit.id.short()}")
             print(f"New commit: {result.short()}")
 

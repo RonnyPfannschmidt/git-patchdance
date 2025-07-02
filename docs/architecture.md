@@ -9,24 +9,24 @@ graph TB
     subgraph "User Interface Layer"
         TUI[Terminal UI<br/>Textual]
     end
-    
+
     subgraph "Application Layer"
         APP[Application Core<br/>State Management]
         CMD[Command Handler<br/>Action Processing]
     end
-    
+
     subgraph "Domain Layer"
         PM[Patch Manager<br/>Core Logic]
         GIT[Git Service<br/>Repository Operations]
         DIFF[Diff Engine<br/>Patch Analysis]
     end
-    
+
     subgraph "Infrastructure Layer"
         REPO[Repository<br/>GitPython bindings]
         FS[File System<br/>Temp files, Config]
         LOG[Logging<br/>Python logging]
     end
-    
+
     TUI --> APP
     APP --> CMD
     CMD --> PM
@@ -55,7 +55,7 @@ Central state management and coordination between UI and domain layers.
 
 **Responsibilities:**
 - Application state management (current repository, selected commits, etc.)
-- UI state synchronization 
+- UI state synchronization
 - Event routing and coordination
 - Undo/redo history management
 
@@ -87,7 +87,7 @@ Core business logic for patch manipulation and git history operations.
 **Key Operations:**
 - Extract patches from commits (full or partial)
 - Apply patches to target commits
-- Create new commits from patch collections  
+- Create new commits from patch collections
 - Validate and preview operations
 - Handle merge conflicts
 
@@ -110,7 +110,7 @@ class SplitCommit:
     commit: CommitId
     patches: list[PatchId]
 
-@dataclass  
+@dataclass
 class CreateCommit:
     patches: list[PatchId]
     message: str
@@ -118,7 +118,7 @@ class CreateCommit:
 Operation = Union[MovePatch, SplitCommit, CreateCommit]
 ```
 
-#### Git Service  
+#### Git Service
 High-level git repository operations and state management.
 
 **Responsibilities:**

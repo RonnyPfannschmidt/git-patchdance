@@ -10,7 +10,6 @@ from git_patchdance.tui.app import CommitDetails, CommitList
 
 
 class CommitListValidationApp(App[None]):
-
     """Test app for CommitList widget."""
 
     def compose(self) -> ComposeResult:

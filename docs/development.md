@@ -229,12 +229,12 @@ from git_patchdance.core.models import CommitId, CommitInfo
 
 class TestCommitId:
     """Tests for CommitId dataclass."""
-    
+
     def test_commit_id_creation(self):
         """Test creating a CommitId."""
         commit_id = CommitId("a1b2c3d4e5f6789012345678901234567890abcd")
         assert commit_id.value == "a1b2c3d4e5f6789012345678901234567890abcd"
-    
+
     def test_commit_id_short(self):
         """Test getting short version of commit ID."""
         commit_id = CommitId("a1b2c3d4e5f6789012345678901234567890abcd")
@@ -247,10 +247,10 @@ async def test_async_operation():
     # Setup
     git_service = GitServiceImpl()
     repo = await git_service.open_repository(Path("."))
-    
+
     # Execute
     commit_graph = await git_service.get_commit_graph(repo, limit=10)
-    
+
     # Verify
     assert len(commit_graph.commits) <= 10
     assert commit_graph.current_branch is not None
@@ -273,21 +273,21 @@ async def test_full_patch_workflow():
             ("Add feature", {"file2.txt": "content2"}),
             ("Fix bug", {"file1.txt": "fixed content1"}),
         ])
-        
+
         # Initialize services
         git_service = GitServiceImpl()
         patch_manager = PatchManager(git_service)
-        
+
         # Extract patches from second commit
         patches = await patch_manager.extract_patches(
             test_repo.repository, test_repo.commits[1]
         )
-        
+
         # Apply patches to third commit
         result = await patch_manager.apply_patches(
             test_repo.repository, patches, test_repo.commits[2]
         )
-        
+
         # Verify result
         assert result.success
         assert len(result.conflicts) == 0
@@ -311,18 +311,18 @@ async def temp_git_repo():
     with TemporaryDirectory() as temp_dir:
         repo_path = Path(temp_dir)
         repo = Repo.init(repo_path)
-        
+
         # Configure git user for test commits
         with repo.config_writer() as config:
             config.set_value("user", "name", "Test User")
             config.set_value("user", "email", "test@example.com")
-        
+
         # Create initial commit
         test_file = repo_path / "test.txt"
         test_file.write_text("Initial content\n")
         repo.index.add([str(test_file)])
         initial_commit = repo.index.commit("Initial commit")
-        
+
         yield {
             "path": repo_path,
             "repo": repo,
@@ -332,17 +332,17 @@ async def temp_git_repo():
 
 class TestRepository:
     """Helper class for creating test repositories."""
-    
+
     def __init__(self, temp_dir: Path):
         self.temp_dir = temp_dir
         self.repo = Repo.init(temp_dir)
         self.commits: list[str] = []
-        
+
         # Configure git user
         with self.repo.config_writer() as config:
             config.set_value("user", "name", "Test User")
             config.set_value("user", "email", "test@example.com")
-    
+
     def create_commit(self, message: str, files: dict[str, str]) -> str:
         """Create a commit with specified files and content."""
         # Write files
@@ -350,7 +350,7 @@ class TestRepository:
             full_path = self.temp_dir / file_path
             full_path.parent.mkdir(parents=True, exist_ok=True)
             full_path.write_text(content)
-        
+
         # Stage and commit
         self.repo.index.add(list(files.keys()))
         commit = self.repo.index.commit(message)
@@ -450,20 +450,20 @@ from git_patchdance import PatchExtractor, TestRepository
 
 class TestPatchPerformance:
     """Performance tests for patch operations."""
-    
+
     @pytest.fixture
     def large_repo(self):
         """Create a repository with many commits for benchmarking."""
         test_repo = TestRepository.with_large_history(1000)
         return test_repo
-    
+
     def test_extract_patches_performance(self, benchmark, large_repo):
         """Benchmark patch extraction performance."""
         extractor = PatchExtractor(large_repo.repository)
-        
+
         def extract_patches():
             return extractor.extract_patches(large_repo.commits[100])
-        
+
         result = benchmark(extract_patches)
         assert len(result) > 0
 ```
@@ -492,7 +492,7 @@ Fixes #123
 
 Types:
 - `feat`: New feature
-- `fix`: Bug fix  
+- `fix`: Bug fix
 - `docs`: Documentation changes
 - `style`: Formatting changes
 - `refactor`: Code restructuring
@@ -564,7 +564,7 @@ name: Release
 on:
   push:
     tags: ['v*']
-    
+
 jobs:
   release:
     runs-on: ubuntu-latest

@@ -214,7 +214,7 @@ The GUI provides a more visual approach with drag-and-drop functionality and mou
 
 #### Global Shortcuts
 - `Ctrl+Q`: Quit application
-- `Ctrl+Z`: Undo last operation  
+- `Ctrl+Z`: Undo last operation
 - `Ctrl+Y`: Redo operation
 - `F1`: Show help
 - `F5`: Refresh repository
@@ -226,7 +226,7 @@ The GUI provides a more visual approach with drag-and-drop functionality and mou
 - `:`: Command mode
 - `g`/`G`: Go to first/last commit
 
-#### GUI Specific  
+#### GUI Specific
 - `Ctrl+O`: Open repository
 - `Ctrl+T`: New tab
 - `Ctrl+W`: Close tab

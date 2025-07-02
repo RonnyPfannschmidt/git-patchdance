@@ -163,5 +163,3 @@ type = "mypy src tests"
 test = "pytest"
 
 all = ["lint", "format", "type", "test"]
-
-

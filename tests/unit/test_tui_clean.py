@@ -84,14 +84,14 @@ class TestTuiAppLogic:
         app = TuiApp(initial_path=tmp_path)
 
         # App should not have app_log widget before compose
-        assert not hasattr(app, 'app_log')
+        assert not hasattr(app, "app_log")
 
     def test_log_property_after_init(self) -> None:
         """Test log property after initialization."""
         app = self.create_test_app()
 
         # After mocking, app should have app_log
-        assert hasattr(app, 'app_log')
+        assert hasattr(app, "app_log")
 
     @pytest.mark.asyncio
     async def test_load_repository_success(self) -> None:

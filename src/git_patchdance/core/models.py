@@ -17,10 +17,8 @@ class CommitId:
 
     full: str
 
-
     def __str__(self) -> str:
         return self.full[:8]
-
 
 
 @dataclass
@@ -69,14 +67,17 @@ class DiffLine:
         if not self.line_type:
             if len(self.content) == 0:
                 self.line_type = "context"
-            elif self.content[0] == '+':
+            elif self.content[0] == "+":
                 self.line_type = "addition"
-            elif self.content[0] == '-':
+            elif self.content[0] == "-":
                 self.line_type = "deletion"
-            elif self.content[0] == ' ':
+            elif self.content[0] == " ":
                 self.line_type = "context"
             else:
-                raise ValueError(f"Invalid diff line format: {self.content!r}. Must start with '+', '-', or ' '")
+                raise ValueError(
+                    f"Invalid diff line format: {self.content!r}. "
+                    f"Must start with '+', '-', or ' '"
+                )
 
 
 @dataclass(frozen=True)

@@ -175,15 +175,15 @@ class TestDiffLine:
         # Test addition lines
         plus_line = DiffLine("+added content")
         assert plus_line.line_type == "addition"
-        
+
         # Test deletion lines
         minus_line = DiffLine("-removed content")
         assert minus_line.line_type == "deletion"
-        
+
         # Test context lines (space prefix)
         context_line = DiffLine(" unchanged content")
         assert context_line.line_type == "context"
-        
+
         # Test empty lines (also context)
         empty_line = DiffLine("")
         assert empty_line.line_type == "context"
@@ -191,10 +191,10 @@ class TestDiffLine:
     def test_diff_line_invalid_format(self) -> None:
         """Test that invalid diff line formats raise ValueError."""
         import pytest
-        
+
         with pytest.raises(ValueError, match="Invalid diff line format"):
             DiffLine("invalid line without proper prefix")
-            
+
         with pytest.raises(ValueError, match="Invalid diff line format"):
             DiffLine("@@ not a valid diff line @@")
 
@@ -211,9 +211,8 @@ class TestHunk:
         ]
 
         hunk = Hunk(
-            old=LineRun(start=10,lines=2),
-            new=LineRun(start=10,
-        lines=2),
+            old=LineRun(start=10, lines=2),
+            new=LineRun(start=10, lines=2),
             lines=lines,
             context="function_name",
         )
