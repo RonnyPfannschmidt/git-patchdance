@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from ..core.errors import InvalidCommitId, NoCommitsFound
-from ..core.models import CommitGraph, CommitId, CommitInfo, Repository
+from ..core.models import CommitGraph, CommitId, CommitInfo
 
 
 class FakeRepository:
@@ -25,20 +25,25 @@ class FakeRepository:
         self._current_branch = current_branch
         self._is_dirty = is_dirty
 
-        # Create head commit ID from current branch
-        head_commit = self._branches.get(current_branch)
-
-        self._repository_info = Repository(
-            path=path,
-            current_branch=current_branch,
-            is_dirty=is_dirty,
-            head_commit=head_commit,
-        )
+    @property
+    def path(self) -> Path:
+        """Get the repository path."""
+        return self._path
 
     @property
-    def info(self) -> Repository:
-        """Get repository information."""
-        return self._repository_info
+    def current_branch(self) -> str:
+        """Get the current branch name."""
+        return self._current_branch
+
+    @property
+    def is_dirty(self) -> bool:
+        """Check if repository has uncommitted changes."""
+        return self._is_dirty
+
+    @property
+    def head_commit(self) -> CommitId | None:
+        """Get the HEAD commit ID."""
+        return self._branches.get(self._current_branch)
 
     def get_commit_graph(
         self,
@@ -124,14 +129,6 @@ class FakeRepository:
         # Update current branch to point to new commit
         self._branches[self._current_branch] = commit.id
 
-        # Update head commit
-        self._repository_info = Repository(
-            path=self._repository_info.path,
-            current_branch=self._repository_info.current_branch,
-            is_dirty=self._repository_info.is_dirty,
-            head_commit=commit.id,
-        )
-
     def add_branch(self, branch_name: str, commit_id: CommitId) -> None:
         """Add a branch pointing to a specific commit (for testing)."""
         if commit_id not in self._commits:
@@ -145,21 +142,7 @@ class FakeRepository:
             raise ValueError(f"Branch {branch_name} does not exist")
 
         self._current_branch = branch_name
-        head_commit = self._branches[branch_name]
-
-        self._repository_info = Repository(
-            path=self._repository_info.path,
-            current_branch=branch_name,
-            is_dirty=self._repository_info.is_dirty,
-            head_commit=head_commit,
-        )
 
     def set_dirty(self, is_dirty: bool) -> None:
         """Set the dirty state of the repository (for testing)."""
         self._is_dirty = is_dirty
-        self._repository_info = Repository(
-            path=self._repository_info.path,
-            current_branch=self._repository_info.current_branch,
-            is_dirty=is_dirty,
-            head_commit=self._repository_info.head_commit,
-        )

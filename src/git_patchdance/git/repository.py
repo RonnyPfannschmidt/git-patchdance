@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Protocol
 
 if TYPE_CHECKING:
-    from ..core.models import CommitGraph, CommitId, CommitInfo, Repository
+    from ..core.models import CommitGraph, CommitId, CommitInfo
 
 
 def open_repository(path: Path | None = None) -> GitRepository:
@@ -20,8 +20,23 @@ class GitRepository(Protocol):
     """Protocol for git repository operations."""
 
     @property
-    def info(self) -> Repository:
-        """Get repository information."""
+    def path(self) -> Path:
+        """Get the repository path."""
+        ...
+
+    @property
+    def current_branch(self) -> str:
+        """Get the current branch name."""
+        ...
+
+    @property
+    def is_dirty(self) -> bool:
+        """Check if repository has uncommitted changes."""
+        ...
+
+    @property
+    def head_commit(self) -> CommitId | None:
+        """Get the HEAD commit ID."""
         ...
 
     def get_commit_graph(

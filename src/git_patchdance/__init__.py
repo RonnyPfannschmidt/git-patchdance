@@ -16,13 +16,11 @@ from .core.models import (
     OperationResult,
     Patch,
     PatchId,
-    Repository,
 )
 
 __all__ = [
     "CommitId",
     "CommitInfo",
-    "Repository",
     "PatchId",
     "Patch",
     "Hunk",

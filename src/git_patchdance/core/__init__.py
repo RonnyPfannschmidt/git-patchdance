@@ -14,7 +14,6 @@ from .models import (
     OperationResult,
     Patch,
     PatchId,
-    Repository,
 )
 
 __all__ = [
@@ -22,7 +21,6 @@ __all__ = [
     "AppEvent",
     "CommitId",
     "CommitInfo",
-    "Repository",
     "PatchId",
     "Patch",
     "Hunk",
@@ -32,5 +30,4 @@ __all__ = [
     "OperationResult",
     "Conflict",
     "CommitGraph",
-    "GitService",
 ]

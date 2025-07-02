@@ -2,7 +2,6 @@
 
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
 
 from git_patchdance.core.models import (
     CommitGraph,
@@ -133,21 +132,6 @@ class TestCommitInfo:
         )
 
         assert commit_info.is_merge()
-
-
-class TestRepository:
-    """Tests for Repository dataclass."""
-
-    def test_repository_creation(self, sample_repository: Any) -> None:
-        """Test creating a Repository."""
-        assert isinstance(sample_repository.path, Path)
-        assert sample_repository.current_branch == "main"
-        assert sample_repository.is_dirty is False
-        assert sample_repository.head_commit is not None
-
-    def test_dirty_repository(self, dirty_repository: Any) -> None:
-        """Test dirty repository state."""
-        assert dirty_repository.is_dirty is True
 
 
 class TestDiffLine:

@@ -12,7 +12,7 @@ from ..core.errors import (
     NoCommitsFound,
     RepositoryNotFound,
 )
-from ..core.models import CommitGraph, CommitId, CommitInfo, Repository
+from ..core.models import CommitGraph, CommitId, CommitInfo
 
 
 class GitPythonRepository:
@@ -22,14 +22,31 @@ class GitPythonRepository:
         """Initialize with repository path."""
         try:
             self._repo = Repo(path, search_parent_directories=True)
-            self._repository_info = self._create_repository_info()
         except InvalidGitRepositoryError:
             raise RepositoryNotFound(path) from None
 
     @property
-    def info(self) -> Repository:
-        """Get repository information."""
-        return self._repository_info
+    def path(self) -> Path:
+        """Get the repository path."""
+        work_dir = self._repo.working_dir
+        if not work_dir:
+            raise RepositoryNotFound(Path.cwd())
+        return Path(work_dir)
+
+    @property
+    def current_branch(self) -> str:
+        """Get the current branch name."""
+        return self._get_current_branch()
+
+    @property
+    def is_dirty(self) -> bool:
+        """Check if repository has uncommitted changes."""
+        return self._repo.is_dirty(untracked_files=True)
+
+    @property
+    def head_commit(self) -> CommitId | None:
+        """Get the HEAD commit ID."""
+        return self._get_head_commit()
 
     def get_commit_graph(
         self,
@@ -63,22 +80,6 @@ class GitPythonRepository:
             return self._convert_commit(commit)
         except Exception as e:
             raise InvalidCommitId(commit_id.full) from e
-
-    def _create_repository_info(self) -> Repository:
-        """Create Repository info from GitPython repo."""
-        try:
-            work_dir = self._repo.working_dir
-            if not work_dir:
-                raise RepositoryNotFound(Path.cwd())
-
-            return Repository(
-                path=Path(work_dir),
-                current_branch=self._get_current_branch(),
-                is_dirty=self._repo.is_dirty(untracked_files=True),
-                head_commit=self._get_head_commit(),
-            )
-        except GitCommandError as e:
-            raise GitOperationError("create_repository_info") from e
 
     def _get_current_branch(self) -> str:
         """Get the current branch name."""

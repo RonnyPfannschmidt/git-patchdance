@@ -216,7 +216,7 @@ class TuiApp(App[None]):
                 self.commit_details.show_commit(self.commit_graph.commits[0])
                 self.status_bar.update(
                     f"Loaded {len(self.commit_graph.commits)} commits "
-                    f"from {self.git_repository.info.current_branch}"
+                    f"from {self.git_repository.current_branch}"
                 )
             else:
                 self.commit_details.update("No commits found in repository")

@@ -8,7 +8,7 @@ from typing import Any
 import pytest
 from git import Repo
 
-from git_patchdance.core.models import CommitId, Repository
+from git_patchdance.core.models import CommitId
 
 
 @pytest.fixture
@@ -39,29 +39,3 @@ def temp_git_repo() -> Generator[dict[str, Any], None, None]:
 def sample_commit_id() -> CommitId:
     """Sample commit ID for testing."""
     return CommitId("a1b2c3d4e5f6789012345678901234567890abcd")
-
-
-@pytest.fixture
-def sample_repository(temp_git_repo: dict[str, Any]) -> Repository:
-    """Sample repository model for testing."""
-    return Repository(
-        path=temp_git_repo["path"],
-        current_branch="main",
-        is_dirty=False,
-        head_commit=temp_git_repo["initial_commit"],
-    )
-
-
-@pytest.fixture
-def dirty_repository(temp_git_repo: dict[str, Any]) -> Repository:
-    """Sample dirty repository for testing."""
-    # Add uncommitted changes
-    test_file = temp_git_repo["path"] / "test.txt"
-    test_file.write_text("Modified content\n")
-
-    return Repository(
-        path=temp_git_repo["path"],
-        current_branch="main",
-        is_dirty=True,
-        head_commit=temp_git_repo["initial_commit"],
-    )

@@ -238,4 +238,4 @@ class TestTuiAppLogic:
         app = TuiApp(git_repository=fake_repo)
 
         assert app.git_repository == fake_repo
-        assert app.git_repository.info.path == Path("/test/repo")
+        assert app.git_repository.path == Path("/test/repo")

@@ -42,16 +42,6 @@ class CommitInfo:
         return len(self.parent_ids) > 1
 
 
-@dataclass
-class Repository:
-    """Represents a git repository."""
-
-    path: Path
-    current_branch: str
-    is_dirty: bool
-    head_commit: CommitId | None
-
-
 PatchId = NewType("PatchId", str)
 
 
