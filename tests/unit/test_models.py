@@ -11,7 +11,6 @@ from git_patchdance.core.models import (
     Hunk,
     LineRun,
     LineType,
-    ModeChange,
     Patch,
     PatchId,
 )
@@ -232,29 +231,6 @@ class TestHunk:
         assert hunk.new.lines == 2
         assert len(hunk.lines) == 3
         assert hunk.context == "function_name"
-
-
-class TestModeChange:
-    """Tests for ModeChange dataclass."""
-
-    def test_new_file_mode_change(self) -> None:
-        """Test creating a new file mode change."""
-        mode_change = ModeChange.NewFile(mode=0o644)
-        assert mode_change.mode == 0o644
-        assert mode_change.change_type == "new_file"
-
-    def test_deleted_file_mode_change(self) -> None:
-        """Test creating a deleted file mode change."""
-        mode_change = ModeChange.DeletedFile(mode=0o644)
-        assert mode_change.mode == 0o644
-        assert mode_change.change_type == "deleted_file"
-
-    def test_mode_change(self) -> None:
-        """Test creating a mode change."""
-        mode_change = ModeChange.ModeChange(old_mode=0o644, new_mode=0o755)
-        assert mode_change.old_mode == 0o644
-        assert mode_change.new_mode == 0o755
-        assert mode_change.change_type == "mode_change"
 
 
 class TestPatch:

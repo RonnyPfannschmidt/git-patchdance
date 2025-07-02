@@ -100,28 +100,29 @@ class Hunk:
 
 
 @dataclass
-class ModeChange:
+class FileCreated:
+    """Represents a newly created file."""
+
+    mode: int
+
+
+@dataclass
+class FileDeleted:
+    """Represents a deleted file."""
+
+    mode: int
+
+
+@dataclass
+class ModeChanged:
     """Represents a file mode change."""
 
-    change_type: str
-    mode: int | None = None
-    old_mode: int | None = None
-    new_mode: int | None = None
+    old_mode: int
+    new_mode: int
 
-    @classmethod
-    def NewFile(cls, mode: int) -> ModeChange:
-        """Create a new file mode change."""
-        return cls(change_type="new_file", mode=mode)
 
-    @classmethod
-    def DeletedFile(cls, mode: int) -> ModeChange:
-        """Create a deleted file mode change."""
-        return cls(change_type="deleted_file", mode=mode)
-
-    @classmethod
-    def ModeChange(cls, old_mode: int, new_mode: int) -> ModeChange:
-        """Create a mode change."""
-        return cls(change_type="mode_change", old_mode=old_mode, new_mode=new_mode)
+# Union type for all mode change types
+ModeChange = FileCreated | FileDeleted | ModeChanged
 
 
 @dataclass
