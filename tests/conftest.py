@@ -1,7 +1,9 @@
 """Shared test fixtures for Git Patchdance tests."""
 
+from collections.abc import Generator
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from typing import Any
 
 import pytest
 from git import Repo
@@ -10,7 +12,7 @@ from git_patchdance.core.models import CommitId, Repository
 
 
 @pytest.fixture
-def temp_git_repo():
+def temp_git_repo() -> Generator[dict[str, Any], None, None]:
     """Create a temporary git repository for testing."""
     with TemporaryDirectory() as temp_dir:
         repo_path = Path(temp_dir)
@@ -34,13 +36,13 @@ def temp_git_repo():
 
 
 @pytest.fixture
-def sample_commit_id():
+def sample_commit_id() -> CommitId:
     """Sample commit ID for testing."""
     return CommitId("a1b2c3d4e5f6789012345678901234567890abcd")
 
 
 @pytest.fixture
-def sample_repository(temp_git_repo):
+def sample_repository(temp_git_repo: dict[str, Any]) -> Repository:
     """Sample repository model for testing."""
     return Repository(
         path=temp_git_repo["path"],
@@ -51,7 +53,7 @@ def sample_repository(temp_git_repo):
 
 
 @pytest.fixture
-def dirty_repository(temp_git_repo):
+def dirty_repository(temp_git_repo: dict[str, Any]) -> Repository:
     """Sample dirty repository for testing."""
     # Add uncommitted changes
     test_file = temp_git_repo["path"] / "test.txt"

@@ -2,6 +2,7 @@
 
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 from git_patchdance.core.models import (
     CommitGraph,
@@ -19,28 +20,28 @@ from git_patchdance.core.models import (
 class TestCommitId:
     """Tests for CommitId dataclass."""
 
-    def test_commit_id_short(self):
+    def test_commit_id_short(self) -> None:
         """Test getting short version of commit ID."""
         commit_id = CommitId("a1b2c3d4e5f6789012345678901234567890abcd")
         assert str(commit_id) == "a1b2c3d4"
 
-    def test_commit_id_short_handles_short_ids(self):
+    def test_commit_id_short_handles_short_ids(self) -> None:
         """Test short() method with already short IDs."""
         commit_id = CommitId("abc123")
         assert str(commit_id) == "abc123"
 
-    def test_commit_id_full(self):
+    def test_commit_id_full(self) -> None:
         """Test getting full commit ID."""
         full_sha = "a1b2c3d4e5f6789012345678901234567890abcd"
         commit_id = CommitId(full_sha)
         assert commit_id.full == full_sha
 
-    def test_commit_id_str_representation(self):
+    def test_commit_id_str_representation(self) -> None:
         """Test string representation uses short format."""
         commit_id = CommitId("a1b2c3d4e5f6789012345678901234567890abcd")
         assert str(commit_id) == "a1b2c3d4"
 
-    def test_commit_id_equality(self):
+    def test_commit_id_equality(self) -> None:
         """Test CommitId equality comparison."""
         commit_id1 = CommitId("a1b2c3d4e5f6789012345678901234567890abcd")
         commit_id2 = CommitId("a1b2c3d4e5f6789012345678901234567890abcd")
@@ -53,7 +54,7 @@ class TestCommitId:
 class TestCommitInfo:
     """Tests for CommitInfo dataclass."""
 
-    def test_commit_info_creation(self):
+    def test_commit_info_creation(self) -> None:
         """Test creating a CommitInfo."""
         commit_id = CommitId("a1b2c3d4e5f6789012345678901234567890abcd")
         timestamp = datetime.now(UTC)
@@ -76,7 +77,7 @@ class TestCommitInfo:
         assert commit_info.parent_ids == ()
         assert commit_info.files_changed == ["file1.py", "file2.py"]
 
-    def test_commit_info_summary(self):
+    def test_commit_info_summary(self) -> None:
         """Test getting commit message summary (first line)."""
         commit_info = CommitInfo(
             id=CommitId("abc123"),
@@ -90,7 +91,7 @@ class TestCommitInfo:
 
         assert commit_info.summary() == "First line summary"
 
-    def test_commit_info_summary_empty_message(self):
+    def test_commit_info_summary_empty_message(self) -> None:
         """Test summary with empty message."""
         commit_info = CommitInfo(
             id=CommitId("abc123"),
@@ -104,7 +105,7 @@ class TestCommitInfo:
 
         assert commit_info.summary() == ""
 
-    def test_commit_info_is_merge_single_parent(self):
+    def test_commit_info_is_merge_single_parent(self) -> None:
         """Test is_merge() with single parent (not a merge)."""
         commit_info = CommitInfo(
             id=CommitId("abc123"),
@@ -118,7 +119,7 @@ class TestCommitInfo:
 
         assert not commit_info.is_merge()
 
-    def test_commit_info_is_merge_multiple_parents(self):
+    def test_commit_info_is_merge_multiple_parents(self) -> None:
         """Test is_merge() with multiple parents (is a merge)."""
         commit_info = CommitInfo(
             id=CommitId("abc123"),
@@ -136,14 +137,14 @@ class TestCommitInfo:
 class TestRepository:
     """Tests for Repository dataclass."""
 
-    def test_repository_creation(self, sample_repository):
+    def test_repository_creation(self, sample_repository: Any) -> None:
         """Test creating a Repository."""
         assert isinstance(sample_repository.path, Path)
         assert sample_repository.current_branch == "main"
         assert sample_repository.is_dirty is False
         assert sample_repository.head_commit is not None
 
-    def test_dirty_repository(self, dirty_repository):
+    def test_dirty_repository(self, dirty_repository: Any) -> None:
         """Test dirty repository state."""
         assert dirty_repository.is_dirty is True
 
@@ -151,19 +152,19 @@ class TestRepository:
 class TestDiffLine:
     """Tests for DiffLine dataclass."""
 
-    def test_diff_line_context(self):
+    def test_diff_line_context(self) -> None:
         """Test creating a context diff line."""
         line = DiffLine.Context("  unchanged line")
         assert line.content == "  unchanged line"
         assert line.line_type == "context"
 
-    def test_diff_line_addition(self):
+    def test_diff_line_addition(self) -> None:
         """Test creating an addition diff line."""
         line = DiffLine.Addition("+ added line")
         assert line.content == "+ added line"
         assert line.line_type == "addition"
 
-    def test_diff_line_deletion(self):
+    def test_diff_line_deletion(self) -> None:
         """Test creating a deletion diff line."""
         line = DiffLine.Deletion("- removed line")
         assert line.content == "- removed line"
@@ -173,7 +174,7 @@ class TestDiffLine:
 class TestHunk:
     """Tests for Hunk dataclass."""
 
-    def test_hunk_creation(self):
+    def test_hunk_creation(self) -> None:
         """Test creating a Hunk."""
         lines = [
             DiffLine.Context("  context line"),
@@ -200,19 +201,19 @@ class TestHunk:
 class TestModeChange:
     """Tests for ModeChange dataclass."""
 
-    def test_new_file_mode_change(self):
+    def test_new_file_mode_change(self) -> None:
         """Test creating a new file mode change."""
         mode_change = ModeChange.NewFile(mode=0o644)
         assert mode_change.mode == 0o644
         assert mode_change.change_type == "new_file"
 
-    def test_deleted_file_mode_change(self):
+    def test_deleted_file_mode_change(self) -> None:
         """Test creating a deleted file mode change."""
         mode_change = ModeChange.DeletedFile(mode=0o644)
         assert mode_change.mode == 0o644
         assert mode_change.change_type == "deleted_file"
 
-    def test_mode_change(self):
+    def test_mode_change(self) -> None:
         """Test creating a mode change."""
         mode_change = ModeChange.ModeChange(old_mode=0o644, new_mode=0o755)
         assert mode_change.old_mode == 0o644
@@ -223,7 +224,7 @@ class TestModeChange:
 class TestPatch:
     """Tests for Patch dataclass."""
 
-    def test_patch_creation(self):
+    def test_patch_creation(self) -> None:
         """Test creating a Patch."""
         patch_id = PatchId("patch-123")
         commit_id = CommitId("abc123")
@@ -256,7 +257,7 @@ class TestPatch:
 class TestCommitGraph:
     """Tests for CommitGraph dataclass."""
 
-    def test_commit_graph_creation(self):
+    def test_commit_graph_creation(self) -> None:
         """Test creating a CommitGraph."""
         commits = [
             CommitInfo(
@@ -288,7 +289,7 @@ class TestCommitGraph:
         assert commit_graph.current_branch == "main"
         assert commit_graph.total_count == 2
 
-    def test_find_commit(self):
+    def test_find_commit(self) -> None:
         """Test finding a commit by ID."""
         commit1 = CommitInfo(
             id=CommitId("commit1"),
@@ -311,7 +312,7 @@ class TestCommitGraph:
         not_found = commit_graph.find_commit(CommitId("nonexistent"))
         assert not_found is None
 
-    def test_get_commit_index(self):
+    def test_get_commit_index(self) -> None:
         """Test getting commit index by ID."""
         commits = [
             CommitInfo(

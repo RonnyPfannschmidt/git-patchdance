@@ -9,7 +9,7 @@ from git_patchdance.core.models import CommitId, CommitInfo
 from git_patchdance.tui.app import CommitDetails, CommitList
 
 
-class CommitListValidationApp(App):
+class CommitListValidationApp(App[None]):
 
     """Test app for CommitList widget."""
 
@@ -18,7 +18,7 @@ class CommitListValidationApp(App):
         yield self.commit_list
 
 
-class CommitDetailsValidationApp(App):
+class CommitDetailsValidationApp(App[None]):
     """Test app for CommitDetails widget."""
 
     def compose(self) -> ComposeResult:
@@ -30,7 +30,7 @@ class TestTuiWidgetsWithApps:
     """Test TUI widgets using test apps."""
 
     @pytest.mark.asyncio
-    async def test_commit_list_widget(self):
+    async def test_commit_list_widget(self) -> None:
         """Test CommitList widget in a Textual app context."""
         app = CommitListValidationApp()
 
@@ -59,7 +59,7 @@ class TestTuiWidgetsWithApps:
             assert len(app.commit_list.children) > 0  # Should have list items
 
     @pytest.mark.asyncio
-    async def test_commit_details_widget(self):
+    async def test_commit_details_widget(self) -> None:
         """Test CommitDetails widget in a Textual app context."""
         app = CommitDetailsValidationApp()
 
@@ -87,7 +87,7 @@ class TestTuiWidgetsWithApps:
             assert "Test commit message" in content
 
     @pytest.mark.asyncio
-    async def test_commit_list_empty_state(self):
+    async def test_commit_list_empty_state(self) -> None:
         """Test CommitList with no commits."""
         app = CommitListValidationApp()
 
@@ -100,7 +100,7 @@ class TestTuiWidgetsWithApps:
             assert len(app.commit_list.children) > 0
 
     @pytest.mark.asyncio
-    async def test_commit_list_multiple_commits(self):
+    async def test_commit_list_multiple_commits(self) -> None:
         """Test CommitList with multiple commits."""
         app = CommitListValidationApp()
 
@@ -125,7 +125,7 @@ class TestTuiWidgetsWithApps:
             assert len(app.commit_list.children) == 3
 
     @pytest.mark.asyncio
-    async def test_commit_details_with_complex_commit(self):
+    async def test_commit_details_with_complex_commit(self) -> None:
         """Test CommitDetails with complex commit info."""
         app = CommitDetailsValidationApp()
 
@@ -154,10 +154,10 @@ class TestWidgetInteractions:
     """Test widget interactions within apps."""
 
     @pytest.mark.asyncio
-    async def test_commit_list_selection_affects_details(self):
+    async def test_commit_list_selection_affects_details(self) -> None:
         """Test that commit list selection updates details."""
 
-        class InteractionTestApp(App):
+        class InteractionTestApp(App[None]):
             def compose(self) -> ComposeResult:
                 self.commit_list = CommitList()
                 self.commit_details = CommitDetails()
