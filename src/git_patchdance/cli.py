@@ -1,6 +1,5 @@
 """Command-line interface for Git Patchdance."""
 
-import asyncio
 import sys
 from pathlib import Path
 
@@ -37,7 +36,9 @@ def main(path: Path, gui: bool = False) -> None:
         click.echo("This application requires a terminal interface to run.", err=True)
         sys.exit(1)
     try:
-        asyncio.run(run_tui(path))
+        git_repository = open_repository(path)
+        app = TuiApp(git_repository=git_repository)
+        app.run()
     except KeyboardInterrupt:
         click.echo("\nExiting...")
         sys.exit(0)
@@ -47,14 +48,6 @@ def main(path: Path, gui: bool = False) -> None:
     except Exception as e:
         click.echo(f"Unexpected error: {e}", err=True)
         sys.exit(1)
-
-
-async def run_tui(path: Path) -> None:
-    """Run the TUI application."""
-
-    git_repository = open_repository(path)
-    app = TuiApp(git_repository=git_repository)
-    await app.run_async()
 
 
 if __name__ == "__main__":

@@ -8,34 +8,30 @@ Git Patchdance is designed as a modular system with clear separation of concerns
 graph TB
     subgraph "User Interface Layer"
         TUI[Terminal UI<br/>Textual]
+        CLI[Command Line<br/>Click]
     end
 
     subgraph "Application Layer"
-        APP[Application Core<br/>State Management]
-        CMD[Command Handler<br/>Action Processing]
+        APP[TUI Application<br/>Event Handling]
     end
 
     subgraph "Domain Layer"
-        PM[Patch Manager<br/>Core Logic]
-        GIT[Git Service<br/>Repository Operations]
-        DIFF[Diff Engine<br/>Patch Analysis]
+        MODELS[Core Models<br/>Data Structures]
+        EVENTS[Event System<br/>Application Events]
     end
 
     subgraph "Infrastructure Layer"
-        REPO[Repository<br/>GitPython bindings]
-        FS[File System<br/>Temp files, Config]
-        LOG[Logging<br/>Python logging]
+        REPO[Git Repository<br/>GitPython/Protocol]
+        ERRORS[Error Handling<br/>Exceptions]
     end
 
     TUI --> APP
-    APP --> CMD
-    CMD --> PM
-    PM --> GIT
-    PM --> DIFF
-    GIT --> REPO
-    DIFF --> REPO
-    APP --> FS
-    APP --> LOG
+    CLI --> APP
+    APP --> MODELS
+    APP --> EVENTS
+    APP --> REPO
+    APP --> ERRORS
+    MODELS --> REPO
 ```
 
 ## Core Components
@@ -50,112 +46,64 @@ graph TB
 
 ### Application Layer
 
-#### Application Core
-Central state management and coordination between UI and domain layers.
+#### TUI Application
+Main application logic using Textual framework.
 
 **Responsibilities:**
-- Application state management (current repository, selected commits, etc.)
-- UI state synchronization
-- Event routing and coordination
-- Undo/redo history management
-
-**Key Structures:**
-```python
-@dataclass
-class AppState:
-    repository: Optional[Repository]
-    commit_history: list[CommitInfo]
-    selected_commits: set[CommitId]
-    patch_operations: list[PatchOperation]
-    ui_state: UiState
-```
-
-#### Command Handler
-Processes user actions and orchestrates domain operations.
-
-**Responsibilities:**
-- Action validation and preprocessing
-- Operation queuing and execution
+- User interface state management
+- Event handling and user interaction
+- Integration with git repository
 - Error handling and user feedback
-- Progress tracking for long operations
+
+**Key Features:**
+- Async event handling with Textual
+- Modern terminal UI components
+- Keyboard-driven navigation
+- Real-time repository updates
 
 ### Domain Layer
 
-#### Patch Manager
-Core business logic for patch manipulation and git history operations.
+#### Core Models
+Data structures for representing git concepts and application state.
 
-**Key Operations:**
-- Extract patches from commits (full or partial)
-- Apply patches to target commits
-- Create new commits from patch collections
-- Validate and preview operations
-- Handle merge conflicts
+**Key Models:**
+- Repository information and metadata
+- Commit history and branch information
+- File changes and patch data
+- Application state and UI data
 
-**Key Structures:**
-```python
-@dataclass
-class PatchManager:
-    git_service: GitService
-    diff_engine: DiffEngine
-    operation_history: list[Operation]
+#### Event System
+Application event handling and coordination.
 
-@dataclass
-class MovePatch:
-    from_commit: CommitId
-    to_commit: CommitId
-    patch_id: PatchId
-
-@dataclass
-class SplitCommit:
-    commit: CommitId
-    patches: list[PatchId]
-
-@dataclass
-class CreateCommit:
-    patches: list[PatchId]
-    message: str
-
-Operation = Union[MovePatch, SplitCommit, CreateCommit]
-```
-
-#### Git Service
-High-level git repository operations and state management.
-
-**Responsibilities:**
-- Repository detection and validation
-- Commit traversal and filtering
-- Branch and ref management
-- Safe git operations with rollback capability
-
-#### Diff Engine
-Patch analysis, manipulation, and conflict resolution.
-
-**Responsibilities:**
-- Parse and analyze git diffs
-- Extract individual file changes
-- Support partial patch selection
-- Detect and resolve conflicts
-- Generate preview diffs
+**Key Features:**
+- Event-driven architecture
+- Async event processing
+- Decoupled component communication
+- Error event handling
 
 ### Infrastructure Layer
 
-#### Repository Layer
-Low-level git operations using GitPython bindings.
+#### Git Repository
+Git repository abstraction and implementations.
 
 **Responsibilities:**
-- Direct git object manipulation
-- Blob and tree operations
-- Index management
-- Reference updates
+- Repository detection and validation
+- Commit and branch operations
+- GitPython integration
+- Repository state management
 
-#### File System
-Configuration and temporary file management.
+**Implementations:**
+- GitPythonRepository: Production implementation
+- FakeRepository: Testing implementation
+
+#### Error Handling
+Comprehensive error management and reporting.
 
 **Responsibilities:**
-- Application configuration
-- Temporary patch files
-- Operation state persistence
-- Backup and recovery
+- Exception hierarchy and types
+- Error recovery and reporting
+- User-friendly error messages
+- Logging and debugging support
 
 ## Data Flow
 

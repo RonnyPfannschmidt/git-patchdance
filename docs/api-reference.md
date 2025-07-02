@@ -6,236 +6,107 @@ This document provides a comprehensive reference for Git Patchdance's public API
 
 The core data models define the fundamental structures used throughout Git Patchdance for representing git repositories, commits, patches, and operations.
 
-### Repository Types
+### Core Models
 
-::: git_patchdance.core.models.Repository
-
-::: git_patchdance.core.models.CommitId
-
-::: git_patchdance.core.models.CommitInfo
-
-::: git_patchdance.core.models.CommitGraph
-
-### Patch Types
-
-::: git_patchdance.core.models.PatchId
-
-::: git_patchdance.core.models.Patch
-
-::: git_patchdance.core.models.Hunk
-
-::: git_patchdance.core.models.DiffLine
-
-::: git_patchdance.core.models.ModeChange
-
-### Operation Types
-
-::: git_patchdance.core.models.InsertPosition
-
-::: git_patchdance.core.models.MovePatch
-
-::: git_patchdance.core.models.SplitCommit
-
-::: git_patchdance.core.models.CreateCommit
-
-::: git_patchdance.core.models.MergeCommits
-
-::: git_patchdance.core.models.NewCommit
-
-## Core Services
-
-The core services provide high-level interfaces for git operations, patch management, and diff processing.
-
-### Git Service
-
-::: git_patchdance.git.service.GitService
+::: git_patchdance.core.models
     options:
-      members:
-        - open_repository
-        - get_commit_graph
-        - get_commit_diff
-        - apply_operation
-        - preview_operation
+      show_root_heading: true
+      show_source: false
 
-::: git_patchdance.git.service.GitServiceImpl
+## Git Repository Interface
 
-### Patch Manager
+The git package provides repository abstraction and implementations.
 
-::: git_patchdance.patch.manager.PatchManager
+### Repository Protocol
+
+::: git_patchdance.git.repository
     options:
-      members:
-        - extract_patches
-        - apply_patches
-        - create_commit_from_patches
-        - detect_conflicts
-        - apply_operation
+      show_root_heading: true
+      show_source: false
 
-### Diff Engine
+### GitPython Implementation
 
-::: git_patchdance.diff.engine.DiffEngine
+::: git_patchdance.git.gitpython_repository
     options:
-      members:
-        - parse_diff
-        - apply_patch
-        - merge_patches
-        - detect_conflicts
-        - extract_patches_from_commit
+      show_root_heading: true
+      show_source: false
 
-## Application API
+### Test Implementation
 
-### Application State
-
-::: git_patchdance.tui.app.AppState
+::: git_patchdance.git.fake_repository
     options:
-      members:
-        - load_repository
-        - select_commit
-        - deselect_commit
-        - queue_operation
-        - get_selected_commits
+      show_root_heading: true
+      show_source: false
 
-### Command Handler
+## Terminal User Interface
 
-::: git_patchdance.tui.app.CommandHandler
+### Main Application
+
+::: git_patchdance.tui.app
     options:
-      members:
-        - execute_command
+      show_root_heading: true
+      show_source: false
 
-## Result Types
+## Event System
 
-### Operation Results
+### Application Events
 
-::: git_patchdance.core.models.OperationResult
+::: git_patchdance.core.events
+    options:
+      show_root_heading: true
+      show_source: false
 
-::: git_patchdance.core.models.OperationPreview
+## Error Handling
 
-::: git_patchdance.core.models.Conflict
+Error handling is implemented using standard Python exceptions.
 
-::: git_patchdance.core.models.ConflictKind
+### Core Errors
 
-## Error Types
+::: git_patchdance.core.errors
+    options:
+      show_root_heading: true
+      show_source: false
 
-Error handling is implemented using standard Python exceptions with a hierarchy for different error types.
+### Exception Types
 
-::: git_patchdance.core.exceptions.GitPatchError
-
-::: git_patchdance.core.exceptions.GitError
-
-::: git_patchdance.core.exceptions.PatchError
-
-::: git_patchdance.core.exceptions.ConflictError
-
-::: git_patchdance.core.exceptions.RepositoryNotFound
-
-::: git_patchdance.core.exceptions.InvalidCommitId
-
-::: git_patchdance.core.exceptions.OperationCancelled
+::: git_patchdance.core.exceptions
+    options:
+      show_root_heading: true
+      show_source: false
 
 ## Command Line Interface
 
 The CLI module provides the command-line interface and argument parsing for Git Patchdance.
 
-::: git_patchdance.cli.main
-
-::: git_patchdance.cli.commands
+::: git_patchdance.cli
+    options:
+      show_root_heading: true
+      show_source: false
 
 ## Usage Examples
 
 ### Basic Usage
 
 ```python
-import asyncio
-from pathlib import Path
-from git_patchdance.git.service import GitServiceImpl
-from git_patchdance.patch.manager import PatchManager
-from git_patchdance.core.models import MovePatch, InsertPosition
+from git_patchdance.cli import main
 
-async def main():
-    """Basic usage example."""
-    # Initialize services
-    git_service = GitServiceImpl()
-    patch_manager = PatchManager(git_service)
-
-    # Open repository
-    repo = await git_service.open_repository(Path("."))
-
-    # Get commit history
-    commit_graph = await git_service.get_commit_graph(repo, limit=10)
-
-    # Extract patches from a commit
-    if commit_graph.commits:
-        commit = commit_graph.commits[0]
-        patches = await patch_manager.extract_patches(repo, commit.id)
-
-        if patches and len(commit_graph.commits) > 1:
-            # Move a patch to another commit
-            target_commit = commit_graph.commits[1]
-            operation = MovePatch(
-                patch_id=patches[0].id,
-                from_commit=commit.id,
-                to_commit=target_commit.id,
-                position=InsertPosition.AFTER
-            )
-
-            result = await patch_manager.apply_operation(repo, operation)
-            print(f"Operation successful: {result.success}")
-
-if __name__ == "__main__":
-    asyncio.run(main())
+# Launch Git Patchdance TUI
+main()
 ```
 
-### Advanced Workflow
+### Programmatic Usage
 
 ```python
-import asyncio
+from git_patchdance.git.gitpython_repository import GitPythonRepository
 from pathlib import Path
-from git_patchdance.git.service import GitServiceImpl
-from git_patchdance.patch.manager import PatchManager
 
-async def advanced_patch_workflow():
-    """Advanced patch workflow with filtering and conflict detection."""
-    git_service = GitServiceImpl()
-    patch_manager = PatchManager(git_service)
-    repo = await git_service.open_repository(Path("."))
+# Create repository instance
+repo = GitPythonRepository(Path("."))
 
-    # Get commit history
-    commit_graph = await git_service.get_commit_graph(repo, limit=10)
-
-    if len(commit_graph.commits) >= 2:
-        source_commit = commit_graph.commits[0]
-        target_commit = commit_graph.commits[1]
-
-        # Extract patches from source commit
-        all_patches = await patch_manager.extract_patches(repo, source_commit.id)
-
-        # Filter patches for Python files only
-        filtered_patches = [
-            patch for patch in all_patches
-            if patch.target_file.suffix == ".py"
-        ]
-
-        if filtered_patches:
-            # Check for conflicts before applying
-            conflicts = await patch_manager.detect_conflicts(
-                repo, filtered_patches, target_commit.id
-            )
-
-            if conflicts:
-                print(f"Conflicts detected: {len(conflicts)} conflicts")
-                for conflict in conflicts:
-                    print(f"  - {conflict.description}")
-                return
-
-            # Apply patches if no conflicts
-            result = await patch_manager.apply_patches(
-                repo, filtered_patches, target_commit.id
-            )
-
-            print(f"Applied {len(filtered_patches)} patches to {target_commit.id.short()}")
-            print(f"New commit: {result.short()}")
-
-if __name__ == "__main__":
-    asyncio.run(advanced_patch_workflow())
+# Work with git repository
+if repo.is_valid():
+    print(f"Repository: {repo.path}")
+    print(f"Current branch: {repo.current_branch()}")
 ```
 
 ---
