@@ -160,6 +160,8 @@ uv = true
 lint = "ruff check --fix"
 format = "ruff format"
 type = "mypy src tests"
+
+quality = ["lint", "format", "type"]
 test = "pytest"
 
-all = ["lint", "format", "type", "test"]
+all = ["quality", "test"]

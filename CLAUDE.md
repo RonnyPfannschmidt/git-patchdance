@@ -2,44 +2,21 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project Overview
+## Project Goal
 
-Git Patchdance is an interactive terminal tool for git patch management built in Python. It enables moving patches between commits, splitting commits, and reorganizing git history through an intuitive interface using Textual for the TUI.
+Git Patchdance is a tool to provide apis and user interfaces
+for moving patch hunks or partial patch hunks between commits in a git branch
 
-## Development Commands
 
-### Environment Setup
-- `uv sync` - Install dependencies and sync virtual environment
-- `uv sync --dev` - Install with development dependencies
-- `uv run python -m git_patchdance` - Run the application
 
-### Build Commands
-- `uv build` - Build distribution packages
-- `uv run python -m build` - Alternative build command
+## Development
 
-### Testing (Test-First Development)
-- `uv run pytest` - Run all tests
-- `uv run pytest tests/unit/` - Run unit tests only
-- `uv run pytest tests/integration/` - Run integration tests only
-- `uv run pytest -k test_name` - Run specific test
-- `uv run pytest --cov` - Run tests with coverage
-- `uv run pytest --cov-report=html` - Generate HTML coverage report
+- when developing new functionality start with a test
+- prefer simple abstractions
+- `uv sync --dev` - Install dependencies and sync virtual environment
+- `uv run pytest` - Run all tests - prefer running all tests for context
+- always get feedback on code quality/linting by running `uv pre-commit run -a`
 
-### Code Quality
-- `uv run ruff format` - Format code
-- `uv run ruff check` - Run linter
-- `uv run ruff check --fix` - Run linter with auto-fix
-- `uv run mypy src/` - Type checking
-
-### Pre-commit Hooks
-- `uv run pre-commit install` - Install pre-commit hooks (one-time setup)
-- `uv run pre-commit run --all-files` - Run all hooks on all files
-- Pre-commit automatically runs on git commit with:
-  - Trailing whitespace removal
-  - End-of-file fixing
-  - YAML validation (excluding mkdocs.yml)
-  - Ruff linting and formatting (with pyupgrade rules)
-  - MyPy type checking
 
 ### Documentation
 - `uv run mkdocs serve` - Serve documentation locally
@@ -86,11 +63,6 @@ The codebase follows a layered architecture using Python:
 - **CLI**: Click for command-line interface
 - **Type Checking**: mypy for static analysis
 
-### Development Dependencies
-- **Testing**: pytest + pytest-asyncio for async testing
-- **Code Quality**: ruff for formatting and linting
-- **Build**: hatchling for packaging
-- **Package Management**: uv for dependency management
 
 ## Testing Approach (Test-First Development)
 
@@ -117,21 +89,11 @@ tests/
 ### Test-First Workflow
 1. **Write tests first** before implementing functionality
 2. **Use fixtures** for consistent test data and repositories
-3. **Mock external dependencies** (git operations, filesystem)
+3. **Use fakes/standins** when external deps are to be avoided
 4. **Test async operations** with proper async/await patterns
 
 ## Development Notes
 
 - **Test-driven development**: Write tests before implementation
 - **Dataclasses for state**: Use dataclasses for models, not serialization
-- **Async-first design**: UI responsiveness during git operations
-- **Type hints**: Comprehensive type annotations for better tooling
 - **Error handling**: Custom exception hierarchy for different error types
-- **GitPython integration**: Async wrappers around GitPython operations
-- **Using mocks is prohibited**
-
-## Workflow Tips
-- Don't run the terminal TUI in your own terminal, ask me to test instead
-- Always write tests first, then implement the functionality
-- Use `uv run pytest --cov` to check test coverage
-- Run `uv run mypy src/` before committing to catch type errors
