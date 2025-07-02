@@ -36,16 +36,17 @@ The codebase follows a layered architecture using Python:
 
 #### Core Package (`src/git_patchdance/core/`)
 - **models.py**: Data models using dataclasses for state management
-- **services.py**: Abstract service interfaces and implementations
 - **errors.py**: Custom exception hierarchy
+- **exceptions.py**: Additional exception definitions
 - **events.py**: Application event system
 - always read the core packages for best context
 
 
 #### Git Service (`src/git_patchdance/git/`)
-- High-level git repository operations using GitPython
-- Repository state management and validation
-- Async operations for UI responsiveness
+- **repository.py**: Abstract repository interface
+- **gitpython_repository.py**: GitPython implementation
+- **fake_repository.py**: Test fake/mock implementation
+- High-level git repository operations and state management
 
 #### TUI Interface (`src/git_patchdance/tui/`)
 - Textual-based terminal user interface
@@ -58,10 +59,12 @@ The codebase follows a layered architecture using Python:
 
 ### Core Dependencies
 - **Git**: GitPython for repository operations
-- **Async**: asyncio for async operations
 - **UI**: Textual for modern terminal UI
 - **CLI**: Click for command-line interface
-- **Type Checking**: mypy for static analysis
+- **Rich**: Rich text and beautiful formatting
+- **Testing**: pytest, pytest-asyncio, pytest-cov, pytest-mock
+- **Code Quality**: mypy, ruff, pre-commit
+- **Documentation**: mkdocs with material theme
 
 
 ## Testing Approach (Test-First Development)
@@ -78,11 +81,10 @@ The project uses comprehensive test-first development with:
 tests/
 ├── unit/
 │   ├── test_models.py          # Test dataclass models
-│   ├── test_git_service.py     # Test git operations
-│   └── test_app_state.py       # Test application state
+│   ├── test_tui_clean.py       # TUI component tests
+│   └── test_tui_widgets_with_apps.py # TUI widget tests
 ├── integration/
-│   ├── test_full_workflow.py   # End-to-end patch operations
-│   └── test_tui_interactions.py # TUI behavior testing
+│   └── (integration tests)     # End-to-end scenarios
 └── conftest.py                 # Shared test fixtures
 ```
 
