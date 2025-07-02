@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, NewType
 
 if TYPE_CHECKING:
     from datetime import datetime
-    from pathlib import Path
+    from pathlib import Path, PurePath
 
 
 @dataclass(frozen=True)
@@ -250,3 +250,23 @@ class CommitGraph:
             if commit.id == commit_id:
                 return i
         return None
+
+
+# Type alias for file content or removal (None = removal)
+ContentOrRemoval = str | None
+
+
+@dataclass
+class CommitRequest:
+    """Request to create a new commit with file operations."""
+
+    message: str
+    author: str
+    email: str
+    file_operations: dict[PurePath, ContentOrRemoval]
+    parent_ids: tuple[CommitId, ...] = ()
+
+    @property
+    def files_changed(self) -> list[str]:
+        """Get list of files that will be changed."""
+        return [str(path) for path in self.file_operations]

@@ -12,7 +12,7 @@ from ..core.errors import (
     NoCommitsFound,
     RepositoryNotFound,
 )
-from ..core.models import CommitGraph, CommitId, CommitInfo
+from ..core.models import CommitGraph, CommitId, CommitInfo, CommitRequest
 
 
 class GitPythonRepository:
@@ -51,16 +51,17 @@ class GitPythonRepository:
     def get_commit_graph(
         self,
         limit: int | None = None,
-        base_branch: str | None = None,  # noqa: ARG002
+        base_branch: str | None = None,
         current_branch: str | None = None,
     ) -> CommitGraph:
         """Get the commit graph for the repository."""
         try:
             # Determine branches
             current = current_branch or self._get_current_branch()
+            base = base_branch or self._get_base_branch()
 
-            # Get commits from current branch
-            commits = self._get_commits(limit or 100)
+            # Get commits between base and current branch
+            commits = self._get_commits_between_branches(base, current, limit or 100)
 
             if not commits:
                 raise NoCommitsFound()
@@ -95,6 +96,57 @@ class GitPythonRepository:
             return CommitId(self._repo.head.commit.hexsha)
         except Exception:
             return None
+
+    def _get_base_branch(self) -> str:
+        """Get the base branch (usually main or master)."""
+        # Check for common base branch names in order of preference
+        candidate_branches = ["main", "master", "develop", "dev"]
+
+        # Get all branch names
+        try:
+            branch_names = [ref.name for ref in self._repo.heads]
+
+            # Find first candidate that exists
+            for candidate in candidate_branches:
+                if candidate in branch_names:
+                    return candidate
+
+            # If no common base branch found, return first available branch
+            if branch_names:
+                return branch_names[0]
+
+            # Fallback to HEAD if no branches exist
+            return "HEAD"
+        except Exception:
+            return "HEAD"
+
+    def _get_commits_between_branches(
+        self, base_branch: str, current_branch: str, limit: int
+    ) -> list[CommitInfo]:
+        """Get commits between base branch and current branch."""
+        commits: list[CommitInfo] = []
+
+        try:
+            # If current branch is the same as base branch, show recent commits
+            if base_branch == current_branch:
+                return self._get_commits(limit)
+
+            # Use git log syntax: base_branch..current_branch to get commits
+            # that are in current_branch but not in base_branch
+            commit_range = f"{base_branch}..{current_branch}"
+
+            for commit in self._repo.iter_commits(commit_range, max_count=limit):
+                commit_info = self._convert_commit(commit)
+                commits.append(commit_info)
+
+        except Exception as e:
+            # Fallback to regular commit listing if range fails
+            try:
+                return self._get_commits(limit)
+            except Exception:
+                raise GitOperationError("get_commits_between_branches") from e
+
+        return commits
 
     def _get_commits(self, limit: int) -> list[CommitInfo]:
         """Get list of commits from repository."""
@@ -135,11 +187,10 @@ class GitPythonRepository:
         timestamp = datetime.fromtimestamp(commit.committed_date, tz=UTC)
 
         # Handle message encoding
-        match commit.message:
-            case bytes() as binary_message:
-                message = binary_message.decode("utf-8", errors="replace")
-            case str() as message:
-                pass
+        if isinstance(commit.message, bytes):
+            message = commit.message.decode("utf-8", errors="replace")
+        else:
+            message = str(commit.message)
 
         return CommitInfo(
             id=CommitId(commit.hexsha),
@@ -150,3 +201,46 @@ class GitPythonRepository:
             parent_ids=tuple(parent_ids) if parent_ids else (),
             files_changed=files_changed,
         )
+
+    def create_commit(self, request: CommitRequest) -> CommitId:
+        """Create a new commit with the specified file operations."""
+        try:
+            # Apply file operations to working directory
+            for file_path, content in request.file_operations.items():
+                full_path = self.path / file_path
+
+                if content is None:
+                    # File removal
+                    if full_path.exists():
+                        full_path.unlink()
+                        # Remove from git index
+                        self._repo.index.remove([str(file_path)])
+                else:
+                    # File creation/modification
+                    # Ensure parent directories exist
+                    full_path.parent.mkdir(parents=True, exist_ok=True)
+                    # Write file content
+                    full_path.write_text(content, encoding="utf-8")
+                    # Add to git index
+                    self._repo.index.add([str(file_path)])
+
+            # Create the commit with specified author
+            from git import Actor
+
+            author = Actor(request.author, request.email)
+
+            commit = self._repo.index.commit(
+                request.message,
+                author=author,
+                committer=author,
+                parent_commits=[
+                    self._repo.commit(pid.full) for pid in request.parent_ids
+                ]
+                if request.parent_ids
+                else None,
+            )
+
+            return CommitId(commit.hexsha)
+
+        except Exception as e:
+            raise GitOperationError("create_commit") from e

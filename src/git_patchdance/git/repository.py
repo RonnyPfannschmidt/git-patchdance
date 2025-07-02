@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Protocol
 
 if TYPE_CHECKING:
-    from ..core.models import CommitGraph, CommitId, CommitInfo
+    from ..core.models import CommitGraph, CommitId, CommitInfo, CommitRequest
 
 
 def open_repository(path: Path | None = None) -> GitRepository:
@@ -56,4 +56,15 @@ class GitRepository(Protocol):
 
     def get_commit_info(self, commit_id: CommitId) -> CommitInfo:
         """Get detailed information about a specific commit."""
+        ...
+
+    def create_commit(self, request: CommitRequest) -> CommitId:
+        """Create a new commit with the specified file operations.
+
+        Args:
+            request: CommitRequest containing commit details and file operations
+
+        Returns:
+            CommitId of the newly created commit
+        """
         ...

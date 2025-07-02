@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from ..core.errors import InvalidCommitId, NoCommitsFound
-from ..core.models import CommitGraph, CommitId, CommitInfo
+from ..core.models import CommitGraph, CommitId, CommitInfo, CommitRequest
 
 
 class FakeRepository:
@@ -48,7 +48,7 @@ class FakeRepository:
     def get_commit_graph(
         self,
         limit: int | None = None,
-        base_branch: str | None = None,  # noqa: ARG002
+        base_branch: str | None = None,
         current_branch: str | None = None,
     ) -> CommitGraph:
         """Get the commit graph for the repository."""
@@ -57,10 +57,10 @@ class FakeRepository:
 
         # Use provided branch or default
         current = current_branch or self._current_branch
+        base = base_branch or self._get_base_branch()
 
-        # Get commits in chronological order (newest first)
-        commits_list = list(self._commits.values())
-        commits_list.sort(key=lambda c: c.timestamp, reverse=True)
+        # Get commits between base and current branch
+        commits_list = self._get_commits_between_branches(base, current)
 
         # Apply limit if specified
         if limit:
@@ -77,6 +77,74 @@ class FakeRepository:
             raise InvalidCommitId(commit_id.full)
 
         return self._commits[commit_id]
+
+    def _get_base_branch(self) -> str:
+        """Get the base branch (usually main or master)."""
+        # Check for common base branch names in order of preference
+        candidate_branches = ["main", "master", "develop", "dev"]
+
+        # Find first candidate that exists
+        for candidate in candidate_branches:
+            if candidate in self._branches:
+                return candidate
+
+        # If no common base branch found, return first available branch
+        branch_names = list(self._branches.keys())
+        if branch_names:
+            return branch_names[0]
+
+        # Fallback
+        return "main"
+
+    def _get_commits_between_branches(
+        self, base_branch: str, current_branch: str
+    ) -> list[CommitInfo]:
+        """Get commits between base branch and current branch."""
+        # If branches are the same, return all commits
+        if base_branch == current_branch:
+            commits_list = list(self._commits.values())
+            commits_list.sort(key=lambda c: c.timestamp, reverse=True)
+            return commits_list
+
+        # Get commit IDs for both branches
+        base_commit_id = self._branches.get(base_branch)
+        current_commit_id = self._branches.get(current_branch)
+
+        if not current_commit_id:
+            # Current branch doesn't exist, return all commits
+            commits_list = list(self._commits.values())
+            commits_list.sort(key=lambda c: c.timestamp, reverse=True)
+            return commits_list
+
+        if not base_commit_id:
+            # Base branch doesn't exist, return commits from current branch
+            return self._get_commits_from_branch(current_branch)
+
+        # Find commits that are in current branch but not in base branch
+        # For simplicity in fake repo, we'll use timestamp-based logic
+        base_commit = self._commits[base_commit_id]
+
+        # Get all commits newer than base commit
+        newer_commits = [
+            commit
+            for commit in self._commits.values()
+            if commit.timestamp > base_commit.timestamp
+        ]
+
+        # Sort by timestamp (newest first)
+        newer_commits.sort(key=lambda c: c.timestamp, reverse=True)
+        return newer_commits
+
+    def _get_commits_from_branch(self, branch_name: str) -> list[CommitInfo]:
+        """Get commits from a specific branch."""
+        commit_id = self._branches.get(branch_name)
+        if not commit_id:
+            return []
+
+        # For fake repo, just return all commits sorted by timestamp
+        commits_list = list(self._commits.values())
+        commits_list.sort(key=lambda c: c.timestamp, reverse=True)
+        return commits_list
 
     @classmethod
     def create_test_repository(
@@ -146,3 +214,33 @@ class FakeRepository:
     def set_dirty(self, is_dirty: bool) -> None:
         """Set the dirty state of the repository (for testing)."""
         self._is_dirty = is_dirty
+
+    def create_commit(self, request: CommitRequest) -> CommitId:
+        """Create a new commit with the specified file operations."""
+        # Generate a new commit ID
+        import hashlib
+
+        content = (
+            f"{request.message}{request.author}{request.email}{len(self._commits)}"
+        )
+        commit_hash = hashlib.sha1(content.encode()).hexdigest()
+        commit_id = CommitId(commit_hash)
+
+        # Create commit info
+        commit_info = CommitInfo(
+            id=commit_id,
+            message=request.message,
+            author=request.author,
+            email=request.email,
+            timestamp=datetime.now(UTC),
+            parent_ids=request.parent_ids,
+            files_changed=request.files_changed,
+        )
+
+        # Add commit to repository
+        self._commits[commit_id] = commit_info
+
+        # Update current branch to point to new commit
+        self._branches[self._current_branch] = commit_id
+
+        return commit_id
