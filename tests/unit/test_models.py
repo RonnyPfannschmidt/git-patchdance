@@ -154,21 +154,49 @@ class TestDiffLine:
 
     def test_diff_line_context(self) -> None:
         """Test creating a context diff line."""
-        line = DiffLine.Context("  unchanged line")
+        line = DiffLine("  unchanged line")
         assert line.content == "  unchanged line"
         assert line.line_type == "context"
 
     def test_diff_line_addition(self) -> None:
         """Test creating an addition diff line."""
-        line = DiffLine.Addition("+ added line")
+        line = DiffLine("+ added line")
         assert line.content == "+ added line"
         assert line.line_type == "addition"
 
     def test_diff_line_deletion(self) -> None:
         """Test creating a deletion diff line."""
-        line = DiffLine.Deletion("- removed line")
+        line = DiffLine("- removed line")
         assert line.content == "- removed line"
         assert line.line_type == "deletion"
+
+    def test_diff_line_automatic_inference(self) -> None:
+        """Test automatic inference of line types from content."""
+        # Test addition lines
+        plus_line = DiffLine("+added content")
+        assert plus_line.line_type == "addition"
+        
+        # Test deletion lines
+        minus_line = DiffLine("-removed content")
+        assert minus_line.line_type == "deletion"
+        
+        # Test context lines (space prefix)
+        context_line = DiffLine(" unchanged content")
+        assert context_line.line_type == "context"
+        
+        # Test empty lines (also context)
+        empty_line = DiffLine("")
+        assert empty_line.line_type == "context"
+
+    def test_diff_line_invalid_format(self) -> None:
+        """Test that invalid diff line formats raise ValueError."""
+        import pytest
+        
+        with pytest.raises(ValueError, match="Invalid diff line format"):
+            DiffLine("invalid line without proper prefix")
+            
+        with pytest.raises(ValueError, match="Invalid diff line format"):
+            DiffLine("@@ not a valid diff line @@")
 
 
 class TestHunk:
@@ -177,9 +205,9 @@ class TestHunk:
     def test_hunk_creation(self) -> None:
         """Test creating a Hunk."""
         lines = [
-            DiffLine.Context("  context line"),
-            DiffLine.Deletion("- old line"),
-            DiffLine.Addition("+ new line"),
+            DiffLine("  context line"),
+            DiffLine("- old line"),
+            DiffLine("+ new line"),
         ]
 
         hunk = Hunk(
@@ -234,7 +262,7 @@ class TestPatch:
             Hunk(
                 old=LineRun(start=1, lines=1),
                 new=LineRun(start=1, lines=1),
-                lines=[DiffLine.Addition("+ new line")],
+                lines=[DiffLine("+ new line")],
                 context="",
             )
         ]

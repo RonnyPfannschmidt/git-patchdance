@@ -62,22 +62,21 @@ class DiffLine:
     """Represents a line in a diff."""
 
     content: str
-    line_type: str
+    line_type: str = ""
 
-    @classmethod
-    def Context(cls, content: str) -> DiffLine:
-        """Create a context line (unchanged)."""
-        return cls(content=content, line_type="context")
-
-    @classmethod
-    def Addition(cls, content: str) -> DiffLine:
-        """Create an addition line (added)."""
-        return cls(content=content, line_type="addition")
-
-    @classmethod
-    def Deletion(cls, content: str) -> DiffLine:
-        """Create a deletion line (removed)."""
-        return cls(content=content, line_type="deletion")
+    def __post_init__(self) -> None:
+        """Automatically infer line_type from content prefix."""
+        if not self.line_type:
+            if len(self.content) == 0:
+                self.line_type = "context"
+            elif self.content[0] == '+':
+                self.line_type = "addition"
+            elif self.content[0] == '-':
+                self.line_type = "deletion"
+            elif self.content[0] == ' ':
+                self.line_type = "context"
+            else:
+                raise ValueError(f"Invalid diff line format: {self.content!r}. Must start with '+', '-', or ' '")
 
 
 @dataclass(frozen=True)
