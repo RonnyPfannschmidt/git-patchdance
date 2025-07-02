@@ -136,7 +136,7 @@ class GitPythonRepository:
 
         # Handle message encoding
         match commit.message:
-            case bytes(binary_message):
+            case bytes() as binary_message:
                 message = binary_message.decode("utf-8", errors="replace")
             case str() as message:
                 pass
