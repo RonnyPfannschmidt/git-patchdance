@@ -15,7 +15,7 @@ for moving patch hunks or partial patch hunks between commits in a git branch
 - prefer simple abstractions
 - `uv sync --dev` - Install dependencies and sync virtual environment
 - `uv run pytest` - Run all tests - prefer running all tests for context
-- always get feedback on code quality/linting by running `uv pre-commit run -a`
+- always get feedback on code quality/linting by running `uv run pre-commit run -a`
 
 
 ### Documentation
