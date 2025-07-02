@@ -31,32 +31,33 @@ dependencies = [
     "gitpython>=3.1.40",
     "click>=8.1.0",
     "rich>=13.0.0",
+]
+
+[dependency-groups]
+test = [
     "pytest>=7.4.0",
     "pytest-asyncio>=0.21.0",
     "pytest-cov>=4.1.0",
     "pytest-mock>=3.11.0",
-    "mypy>=1.6.0",
+]
+lint = [
     "ruff>=0.1.0",
     "pre-commit>=3.4.0",
+]
+type = [
+    "mypy>=1.6.0",
+]
+doc = [
     "mkdocs>=1.5.0",
     "mkdocs-material>=9.4.0",
     "mkdocs-mermaid2-plugin>=1.1.0",
     "mkdocstrings[python]>=0.24.0",
 ]
-
-[project.optional-dependencies]
 dev = [
-    "pytest>=7.4.0",
-    "pytest-asyncio>=0.21.0",
-    "pytest-cov>=4.1.0",
-    "pytest-mock>=3.11.0",
-    "mypy>=1.6.0",
-    "ruff>=0.1.0",
-    "pre-commit>=3.4.0",
-    "mkdocs>=1.5.0",
-    "mkdocs-material>=9.4.0",
-    "mkdocs-mermaid2-plugin>=1.1.0",
-    "mkdocstrings[python]>=0.24.0",
+    {include-group = "test"},
+    {include-group = "lint"},
+    {include-group = "type"},
+    {include-group = "doc"},
 ]
 
 [project.urls]
@@ -154,8 +155,13 @@ line-ending = "auto"
 known-first-party = ["git_patchdance"]
 
 
+[tool.uv]
+default-groups = ["dev"]
+
 [tool.hatch.envs.default]
 uv = true
+groups = ["dev"]
+
 [tool.hatch.envs.default.scripts]
 lint = "ruff check --fix"
 format = "ruff format"
@@ -165,3 +171,36 @@ quality = ["lint", "format", "type"]
 test = "pytest"
 
 all = ["quality", "test"]
+
+[tool.hatch.envs.test]
+uv = true
+groups = ["test"]
+
+[tool.hatch.envs.test.scripts]
+run = "pytest {args}"
+cov = "pytest --cov {args}"
+
+[tool.hatch.envs.lint]
+uv = true
+groups = ["lint"]
+
+[tool.hatch.envs.lint.scripts]
+check = "ruff check {args}"
+fix = "ruff check --fix {args}"
+format = "ruff format {args}"
+hooks = "pre-commit run --all-files"
+
+[tool.hatch.envs.type]
+uv = true
+groups = ["type"]
+
+[tool.hatch.envs.type.scripts]
+check = "mypy {args:src tests}"
+
+[tool.hatch.envs.docs]
+uv = true
+groups = ["doc"]
+
+[tool.hatch.envs.docs.scripts]
+serve = "mkdocs serve"
+build = "mkdocs build"
