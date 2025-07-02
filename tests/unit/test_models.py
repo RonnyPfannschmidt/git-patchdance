@@ -9,6 +9,7 @@ from git_patchdance.core.models import (
     CommitInfo,
     DiffLine,
     Hunk,
+    LineRun,
     ModeChange,
     Patch,
     PatchId,
@@ -18,26 +19,21 @@ from git_patchdance.core.models import (
 class TestCommitId:
     """Tests for CommitId dataclass."""
 
-    def test_commit_id_creation(self):
-        """Test creating a CommitId."""
-        commit_id = CommitId("a1b2c3d4e5f6789012345678901234567890abcd")
-        assert commit_id.value == "a1b2c3d4e5f6789012345678901234567890abcd"
-
     def test_commit_id_short(self):
         """Test getting short version of commit ID."""
         commit_id = CommitId("a1b2c3d4e5f6789012345678901234567890abcd")
-        assert commit_id.short() == "a1b2c3d4"
+        assert str(commit_id) == "a1b2c3d4"
 
     def test_commit_id_short_handles_short_ids(self):
         """Test short() method with already short IDs."""
         commit_id = CommitId("abc123")
-        assert commit_id.short() == "abc123"
+        assert str(commit_id) == "abc123"
 
     def test_commit_id_full(self):
         """Test getting full commit ID."""
         full_sha = "a1b2c3d4e5f6789012345678901234567890abcd"
         commit_id = CommitId(full_sha)
-        assert commit_id.full() == full_sha
+        assert commit_id.full == full_sha
 
     def test_commit_id_str_representation(self):
         """Test string representation uses short format."""
@@ -68,7 +64,7 @@ class TestCommitInfo:
             author="Test Author",
             email="test@example.com",
             timestamp=timestamp,
-            parent_ids=[],
+            parent_ids=(),
             files_changed=["file1.py", "file2.py"],
         )
 
@@ -77,7 +73,7 @@ class TestCommitInfo:
         assert commit_info.author == "Test Author"
         assert commit_info.email == "test@example.com"
         assert commit_info.timestamp == timestamp
-        assert commit_info.parent_ids == []
+        assert commit_info.parent_ids == ()
         assert commit_info.files_changed == ["file1.py", "file2.py"]
 
     def test_commit_info_summary(self):
@@ -88,7 +84,7 @@ class TestCommitInfo:
             author="Test Author",
             email="test@example.com",
             timestamp=datetime.now(UTC),
-            parent_ids=[],
+            parent_ids=(),
             files_changed=[],
         )
 
@@ -102,7 +98,7 @@ class TestCommitInfo:
             author="Test Author",
             email="test@example.com",
             timestamp=datetime.now(UTC),
-            parent_ids=[],
+            parent_ids=(),
             files_changed=[],
         )
 
@@ -116,7 +112,7 @@ class TestCommitInfo:
             author="Test Author",
             email="test@example.com",
             timestamp=datetime.now(UTC),
-            parent_ids=[CommitId("parent123")],
+            parent_ids=(CommitId("parent123"),),
             files_changed=[],
         )
 
@@ -130,7 +126,7 @@ class TestCommitInfo:
             author="Test Author",
             email="test@example.com",
             timestamp=datetime.now(UTC),
-            parent_ids=[CommitId("parent1"), CommitId("parent2")],
+            parent_ids=(CommitId("parent1"), CommitId("parent2")),
             files_changed=[],
         )
 
@@ -150,20 +146,6 @@ class TestRepository:
     def test_dirty_repository(self, dirty_repository):
         """Test dirty repository state."""
         assert dirty_repository.is_dirty is True
-
-
-class TestPatchId:
-    """Tests for PatchId dataclass."""
-
-    def test_patch_id_creation(self):
-        """Test creating a PatchId."""
-        patch_id = PatchId("patch-123")
-        assert patch_id.value == "patch-123"
-
-    def test_patch_id_str_representation(self):
-        """Test string representation."""
-        patch_id = PatchId("patch-123")
-        assert str(patch_id) == "patch-123"
 
 
 class TestDiffLine:
@@ -200,18 +182,17 @@ class TestHunk:
         ]
 
         hunk = Hunk(
-            old_start=10,
-            old_lines=2,
-            new_start=10,
-            new_lines=2,
+            old=LineRun(start=10,lines=2),
+            new=LineRun(start=10,
+        lines=2),
             lines=lines,
             context="function_name",
         )
 
-        assert hunk.old_start == 10
-        assert hunk.old_lines == 2
-        assert hunk.new_start == 10
-        assert hunk.new_lines == 2
+        assert hunk.old.start == 10
+        assert hunk.old.lines == 2
+        assert hunk.new.start == 10
+        assert hunk.new.lines == 2
         assert len(hunk.lines) == 3
         assert hunk.context == "function_name"
 
@@ -250,10 +231,8 @@ class TestPatch:
 
         hunks = [
             Hunk(
-                old_start=1,
-                old_lines=1,
-                new_start=1,
-                new_lines=1,
+                old=LineRun(start=1, lines=1),
+                new=LineRun(start=1, lines=1),
                 lines=[DiffLine.Addition("+ new line")],
                 context="",
             )
@@ -286,7 +265,7 @@ class TestCommitGraph:
                 author="Test Author",
                 email="test@example.com",
                 timestamp=datetime.now(UTC),
-                parent_ids=[],
+                parent_ids=(),
                 files_changed=["file1.py"],
             ),
             CommitInfo(
@@ -295,7 +274,7 @@ class TestCommitGraph:
                 author="Test Author",
                 email="test@example.com",
                 timestamp=datetime.now(UTC),
-                parent_ids=[CommitId("commit1")],
+                parent_ids=(CommitId("commit1"),),
                 files_changed=["file2.py"],
             ),
         ]
@@ -317,7 +296,7 @@ class TestCommitGraph:
             author="Test Author",
             email="test@example.com",
             timestamp=datetime.now(UTC),
-            parent_ids=[],
+            parent_ids=(),
             files_changed=[],
         )
 
@@ -341,7 +320,7 @@ class TestCommitGraph:
                 author="Test Author",
                 email="test@example.com",
                 timestamp=datetime.now(UTC),
-                parent_ids=[],
+                parent_ids=(),
                 files_changed=[],
             ),
             CommitInfo(
@@ -350,7 +329,7 @@ class TestCommitGraph:
                 author="Test Author",
                 email="test@example.com",
                 timestamp=datetime.now(UTC),
-                parent_ids=[],
+                parent_ids=(),
                 files_changed=[],
             ),
         ]

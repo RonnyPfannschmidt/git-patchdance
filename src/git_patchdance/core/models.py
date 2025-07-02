@@ -11,19 +11,16 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 
-@dataclass
+@dataclass(frozen=True)
 class CommitId:
     """Represents a git commit ID/SHA."""
 
-    value: str
+    full: str
 
-    def short(self) -> str:
-        """Get the short version of the commit ID (first 8 characters)."""
-        return self.value[:8] if len(self.value) >= 8 else self.value
 
-    def full(self) -> str:
-        """Get the full commit ID."""
-        return self.value
+    def __str__(self) -> str:
+        return self.full[:8]
+
 
 
 @dataclass
@@ -35,12 +32,12 @@ class CommitInfo:
     author: str
     email: str
     timestamp: datetime
-    parent_ids: list[CommitId]
+    parent_ids: tuple[CommitId, ...]
     files_changed: list[str]
 
     def summary(self) -> str:
         """Get the commit message summary (first line)."""
-        return self.message.split("\n", 1)[0] if self.message else ""
+        return self.message.split("\n", 1)[0]
 
     def is_merge(self) -> bool:
         """Check if this is a merge commit (has multiple parents)."""

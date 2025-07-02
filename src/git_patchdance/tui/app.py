@@ -66,7 +66,7 @@ class CommitList(ListView):
             return
 
         for commit in commits:
-            item_text = f"{commit.id.short()} {commit.summary()[:60]}"
+            item_text = f"{commit.id} {commit.summary()[:60]}"
             self.append(ListItem(Label(item_text)))
 
 
@@ -81,7 +81,7 @@ class CommitDetails(Static):
     def show_commit(self, commit: CommitInfo) -> None:
         """Show details for a commit."""
         details = [
-            f"Commit: {commit.id.full()}",
+            f"Commit: {commit.id.full}",
             f"Author: {commit.author} <{commit.email}>",
             f"Date: {commit.timestamp.strftime('%Y-%m-%d %H:%M:%S')}",
             f"Parents: {len(commit.parent_ids)}",

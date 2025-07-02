@@ -9,7 +9,8 @@ from git_patchdance.core.models import CommitId, CommitInfo
 from git_patchdance.tui.app import CommitDetails, CommitList
 
 
-class TestCommitListApp(App):
+class CommitListValidationApp(App):
+
     """Test app for CommitList widget."""
 
     def compose(self) -> ComposeResult:
@@ -31,7 +32,7 @@ class TestTuiWidgetsWithApps:
     @pytest.mark.asyncio
     async def test_commit_list_widget(self):
         """Test CommitList widget in a Textual app context."""
-        app = TestCommitListApp()
+        app = CommitListValidationApp()
 
         async with app.run_test() as pilot:
             # Test initialization
@@ -46,7 +47,7 @@ class TestTuiWidgetsWithApps:
                     author="Test Author",
                     email="test@example.com",
                     timestamp=datetime.now(),
-                    parent_ids=[],
+                    parent_ids=(),
                     files_changed=["test.py"],
                 )
             ]
@@ -73,7 +74,7 @@ class TestTuiWidgetsWithApps:
                 author="Test Author",
                 email="test@example.com",
                 timestamp=datetime(2023, 1, 1, 12, 0, 0),
-                parent_ids=[],
+                parent_ids=(),
                 files_changed=["test.py"],
             )
 
@@ -88,7 +89,7 @@ class TestTuiWidgetsWithApps:
     @pytest.mark.asyncio
     async def test_commit_list_empty_state(self):
         """Test CommitList with no commits."""
-        app = TestCommitListApp()
+        app = CommitListValidationApp()
 
         async with app.run_test() as pilot:
             # Set empty commits
@@ -101,7 +102,7 @@ class TestTuiWidgetsWithApps:
     @pytest.mark.asyncio
     async def test_commit_list_multiple_commits(self):
         """Test CommitList with multiple commits."""
-        app = TestCommitListApp()
+        app = CommitListValidationApp()
 
         async with app.run_test() as pilot:
             commits = [
@@ -111,7 +112,7 @@ class TestTuiWidgetsWithApps:
                     author="Author",
                     email="test@example.com",
                     timestamp=datetime.now(),
-                    parent_ids=[],
+                    parent_ids=(),
                     files_changed=[],
                 )
                 for i in range(3)
@@ -135,7 +136,7 @@ class TestTuiWidgetsWithApps:
                 author="Complex Author",
                 email="complex@example.com",
                 timestamp=datetime(2023, 12, 25, 14, 30, 45),
-                parent_ids=[CommitId("parent1"), CommitId("parent2")],
+                parent_ids=(CommitId("parent1"), CommitId("parent2")),
                 files_changed=["file1.py", "file2.py", "file3.py"],
             )
 
@@ -173,7 +174,7 @@ class TestWidgetInteractions:
                     author="Author 1",
                     email="author1@example.com",
                     timestamp=datetime.now(),
-                    parent_ids=[],
+                    parent_ids=(),
                     files_changed=["file1.py"],
                 ),
                 CommitInfo(
@@ -182,7 +183,7 @@ class TestWidgetInteractions:
                     author="Author 2",
                     email="author2@example.com",
                     timestamp=datetime.now(),
-                    parent_ids=[],
+                    parent_ids=(),
                     files_changed=["file2.py"],
                 ),
             ]

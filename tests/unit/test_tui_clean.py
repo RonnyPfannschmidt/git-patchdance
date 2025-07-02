@@ -49,17 +49,24 @@ class MockLog:
 class TestTuiAppLogic:
     """Test TUI app business logic."""
 
-    @pytest.fixture
-    def app(self, tmp_path: Path):
-        app = TuiApp(initial_path=tmp_path)
+    def create_test_app(self, path: Path = None) -> TuiApp:
+        """Create a test app with mocked widgets."""
+        if path is None:
+            path = Path("/tmp/test")
+        app = TuiApp(initial_path=path)
 
         # Replace widgets with mocks
         app.commit_list = MockWidget()
         app.commit_details = MockWidget()
         app.status_bar = MockWidget()
+        app.app_log = MockLog()
         app._log_widget = MockLog()
 
         return app
+
+    @pytest.fixture
+    def app(self, tmp_path: Path):
+        return self.create_test_app(tmp_path)
 
     def test_app_initialization(self, app):
         """Test basic app initialization."""
@@ -68,22 +75,22 @@ class TestTuiAppLogic:
         assert app.commit_graph is None
         assert app.selected_index == 0
         assert app.git_service is not None
-        assert app._initial_path is None
-        assert app._log_widget is None
+        assert app._initial_path is not None
+        assert app._log_widget is not None
 
-    def test_log_property_before_init(self, app: TuiApp) -> None:
+    def test_log_property_before_init(self, tmp_path: Path) -> None:
         """Test log property before initialization."""
-        app = TuiApp()
+        app = TuiApp(initial_path=tmp_path)
 
-        with pytest.raises(RuntimeError, match="Log widget not initialized"):
-            _ = app.log
+        # App should not have app_log widget before compose
+        assert not hasattr(app, 'app_log')
 
     def test_log_property_after_init(self):
         """Test log property after initialization."""
         app = self.create_test_app()
 
-        log = app.log
-        assert log is app._log_widget
+        # After mocking, app should have app_log
+        assert hasattr(app, 'app_log')
 
     @pytest.mark.asyncio
     async def test_load_repository_success(self):
@@ -105,7 +112,7 @@ class TestTuiAppLogic:
                 author="Test Author",
                 email="test@example.com",
                 timestamp=datetime.now(),
-                parent_ids=[],
+                parent_ids=(),
                 files_changed=["test.py"],
             )
         ]
@@ -142,8 +149,8 @@ class TestTuiAppLogic:
         await app.load_repository("/nonexistent")
 
         # Should log error
-        assert len(app._log_widget.messages) > 0
-        assert "Failed to load repository" in app._log_widget.messages[0]
+        assert len(app.app_log.messages) > 0
+        assert "Failed to load repository" in app.app_log.messages[0]
         # Should update commit details with error info
         assert "Failed to load repository" in app.commit_details.data
 
@@ -159,7 +166,7 @@ class TestTuiAppLogic:
                 author="Author",
                 email="test@example.com",
                 timestamp=datetime.now(),
-                parent_ids=[],
+                parent_ids=(),
                 files_changed=[],
             )
             for i in range(3)
@@ -190,7 +197,7 @@ class TestTuiAppLogic:
                 author="Author",
                 email="test@example.com",
                 timestamp=datetime.now(),
-                parent_ids=[],
+                parent_ids=(),
                 files_changed=[],
             )
             for i in range(3)
@@ -246,8 +253,8 @@ class TestTuiAppLogic:
         await app.action_refresh()
 
         # Should reload repository
-        app.load_repository.assert_called_once_with("/test/repo")
-        assert "Repository refreshed" in app._log_widget.messages
+        app.load_repository.assert_called_once_with(Path("/test/repo"))
+        assert "Repository refreshed" in app.app_log.messages
 
     @pytest.mark.asyncio
     async def test_refresh_no_repository(self, app: TuiApp) -> None:

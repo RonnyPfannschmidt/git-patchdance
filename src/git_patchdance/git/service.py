@@ -87,11 +87,11 @@ class GitService:
         """Get detailed information about a specific commit."""
         try:
             repo = await asyncio.to_thread(self._get_repo, repository.path)
-            commit = await asyncio.to_thread(repo.commit, commit_id.value)
+            commit = await asyncio.to_thread(repo.commit, commit_id.full)
             return await asyncio.to_thread(self._convert_commit, commit)
 
         except Exception as e:
-            raise InvalidCommitId(commit_id.value) from e
+            raise InvalidCommitId(commit_id.full) from e
 
     async def get_patches(
         self,
@@ -205,6 +205,6 @@ class GitService:
             author=commit.author.name or "",
             email=commit.author.email or "",
             timestamp=timestamp,
-            parent_ids=parent_ids or [],
+            parent_ids=tuple(parent_ids) if parent_ids else (),
             files_changed=files_changed,
         )
