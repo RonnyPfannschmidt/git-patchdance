@@ -11,6 +11,7 @@ from git_patchdance.core.models import (
     DiffLine,
     Hunk,
     LineRun,
+    LineType,
     ModeChange,
     Patch,
     PatchId,
@@ -154,49 +155,73 @@ class TestDiffLine:
 
     def test_diff_line_context(self) -> None:
         """Test creating a context diff line."""
-        line = DiffLine("  unchanged line")
-        assert line.content == "  unchanged line"
-        assert line.line_type == "context"
+        line = DiffLine.from_diff_line("  unchanged line")
+        assert line.content == "unchanged line"
+        assert line.line_type == LineType.CONTEXT
 
     def test_diff_line_addition(self) -> None:
         """Test creating an addition diff line."""
-        line = DiffLine("+ added line")
-        assert line.content == "+ added line"
-        assert line.line_type == "addition"
+        line = DiffLine.from_diff_line("+ added line")
+        assert line.content == "added line"
+        assert line.line_type == LineType.ADDITION
 
     def test_diff_line_deletion(self) -> None:
         """Test creating a deletion diff line."""
-        line = DiffLine("- removed line")
-        assert line.content == "- removed line"
-        assert line.line_type == "deletion"
+        line = DiffLine.from_diff_line("- removed line")
+        assert line.content == "removed line"
+        assert line.line_type == LineType.DELETION
 
     def test_diff_line_automatic_inference(self) -> None:
         """Test automatic inference of line types from content."""
         # Test addition lines
-        plus_line = DiffLine("+added content")
-        assert plus_line.line_type == "addition"
+        plus_line = DiffLine.from_diff_line("+ added content")
+        assert plus_line.line_type == LineType.ADDITION
+        assert plus_line.content == "added content"
 
         # Test deletion lines
-        minus_line = DiffLine("-removed content")
-        assert minus_line.line_type == "deletion"
+        minus_line = DiffLine.from_diff_line("- removed content")
+        assert minus_line.line_type == LineType.DELETION
+        assert minus_line.content == "removed content"
 
         # Test context lines (space prefix)
-        context_line = DiffLine(" unchanged content")
-        assert context_line.line_type == "context"
+        context_line = DiffLine.from_diff_line("  unchanged content")
+        assert context_line.line_type == LineType.CONTEXT
+        assert context_line.content == "unchanged content"
 
         # Test empty lines (also context)
-        empty_line = DiffLine("")
-        assert empty_line.line_type == "context"
+        empty_line = DiffLine.from_diff_line("")
+        assert empty_line.line_type == LineType.CONTEXT
+        assert empty_line.content == ""
 
     def test_diff_line_invalid_format(self) -> None:
         """Test that invalid diff line formats raise ValueError."""
         import pytest
 
         with pytest.raises(ValueError, match="Invalid diff line format"):
-            DiffLine("invalid line without proper prefix")
+            DiffLine.from_diff_line("invalid line without proper prefix")
 
         with pytest.raises(ValueError, match="Invalid diff line format"):
-            DiffLine("@@ not a valid diff line @@")
+            DiffLine.from_diff_line("@@ not a valid diff line @@")
+
+    def test_diff_line_to_diff_line(self) -> None:
+        """Test converting DiffLine back to raw diff format."""
+        # Test addition
+        line = DiffLine(content="added line", line_type=LineType.ADDITION)
+        assert line.to_diff_line() == "+ added line"
+
+        # Test deletion
+        line = DiffLine(content="removed line", line_type=LineType.DELETION)
+        assert line.to_diff_line() == "- removed line"
+
+        # Test context
+        line = DiffLine(content="unchanged line", line_type=LineType.CONTEXT)
+        assert line.to_diff_line() == "  unchanged line"
+
+        # Test round trip
+        original = "  some context line"
+        parsed = DiffLine.from_diff_line(original)
+        reconstructed = parsed.to_diff_line()
+        assert reconstructed == original
 
 
 class TestHunk:
@@ -205,9 +230,9 @@ class TestHunk:
     def test_hunk_creation(self) -> None:
         """Test creating a Hunk."""
         lines = [
-            DiffLine("  context line"),
-            DiffLine("- old line"),
-            DiffLine("+ new line"),
+            DiffLine.from_diff_line("  context line"),
+            DiffLine.from_diff_line("- old line"),
+            DiffLine.from_diff_line("+ new line"),
         ]
 
         hunk = Hunk(
@@ -261,7 +286,7 @@ class TestPatch:
             Hunk(
                 old=LineRun(start=1, lines=1),
                 new=LineRun(start=1, lines=1),
-                lines=[DiffLine("+ new line")],
+                lines=[DiffLine.from_diff_line("+ new line")],
                 context="",
             )
         ]

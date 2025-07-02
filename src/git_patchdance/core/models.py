@@ -55,29 +55,42 @@ class Repository:
 PatchId = NewType("PatchId", str)
 
 
+class LineType(Enum):
+    """Enum representing diff line types with their 2-character prefixes."""
+
+    ADDITION = "+ "
+    DELETION = "- "
+    CONTEXT = "  "
+
+
 @dataclass
 class DiffLine:
     """Represents a line in a diff."""
 
     content: str
-    line_type: str = ""
+    line_type: LineType
 
-    def __post_init__(self) -> None:
-        """Automatically infer line_type from content prefix."""
-        if not self.line_type:
-            if len(self.content) == 0:
-                self.line_type = "context"
-            elif self.content[0] == "+":
-                self.line_type = "addition"
-            elif self.content[0] == "-":
-                self.line_type = "deletion"
-            elif self.content[0] == " ":
-                self.line_type = "context"
-            else:
-                raise ValueError(
-                    f"Invalid diff line format: {self.content!r}. "
-                    f"Must start with '+', '-', or ' '"
-                )
+    @classmethod
+    def from_diff_line(cls, line: str) -> DiffLine:
+        """Create a DiffLine from a raw diff line string."""
+        if len(line) == 0:
+            return cls(content="", line_type=LineType.CONTEXT)
+
+        if line.startswith("+ "):
+            return cls(content=line[2:], line_type=LineType.ADDITION)
+        elif line.startswith("- "):
+            return cls(content=line[2:], line_type=LineType.DELETION)
+        elif line.startswith("  "):
+            return cls(content=line[2:], line_type=LineType.CONTEXT)
+        else:
+            raise ValueError(
+                f"Invalid diff line format: {line!r}. "
+                f"Must start with '+ ', '- ', or '  '"
+            )
+
+    def to_diff_line(self) -> str:
+        """Convert back to raw diff line format."""
+        return self.line_type.value + self.content
 
 
 @dataclass(frozen=True)
