@@ -121,9 +121,9 @@ class TestDemoRepository:
         ]
 
         for indicator in pattern_indicators:
-            assert any(
-                indicator in msg for msg in commit_messages
-            ), f"Missing pattern: {indicator}"
+            assert any(indicator in msg for msg in commit_messages), (
+                f"Missing pattern: {indicator}"
+            )
 
     def test_demo_repository_author_consistency(self) -> None:
         """Test that all demo commits have consistent author information."""
