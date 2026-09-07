@@ -14,9 +14,11 @@ class Repository:
     is_dirty: bool
     head_commit: Optional[CommitId]
 
+
 @dataclass
 class CommitId:
     value: str
+
 
 @dataclass
 class CommitInfo:
@@ -27,6 +29,7 @@ class CommitInfo:
     timestamp: datetime
     parent_ids: list[CommitId]
     files_changed: list[str]
+
 
 @dataclass
 class CommitGraph:
@@ -42,6 +45,7 @@ class CommitGraph:
 class PatchId:
     value: str
 
+
 @dataclass
 class Patch:
     id: PatchId
@@ -49,6 +53,7 @@ class Patch:
     target_file: Path
     hunks: list[Hunk]
     mode_change: Optional[ModeChange]
+
 
 @dataclass
 class Hunk:
@@ -59,22 +64,24 @@ class Hunk:
     lines: list[DiffLine]
     context: str
 
+
 @dataclass
 class DiffLine:
     content: str
     line_type: str
 
     @classmethod
-    def Context(cls, content: str) -> 'DiffLine':
+    def Context(cls, content: str) -> "DiffLine":
         return cls(content=content, line_type="context")
 
     @classmethod
-    def Addition(cls, content: str) -> 'DiffLine':
+    def Addition(cls, content: str) -> "DiffLine":
         return cls(content=content, line_type="addition")
 
     @classmethod
-    def Deletion(cls, content: str) -> 'DiffLine':
+    def Deletion(cls, content: str) -> "DiffLine":
         return cls(content=content, line_type="deletion")
+
 
 @dataclass
 class ModeChange:
@@ -84,15 +91,15 @@ class ModeChange:
     new_mode: Optional[int] = None
 
     @classmethod
-    def NewFile(cls, mode: int) -> 'ModeChange':
+    def NewFile(cls, mode: int) -> "ModeChange":
         return cls(change_type="new_file", mode=mode)
 
     @classmethod
-    def DeletedFile(cls, mode: int) -> 'ModeChange':
+    def DeletedFile(cls, mode: int) -> "ModeChange":
         return cls(change_type="deleted_file", mode=mode)
 
     @classmethod
-    def ModeChange(cls, old_mode: int, new_mode: int) -> 'ModeChange':
+    def ModeChange(cls, old_mode: int, new_mode: int) -> "ModeChange":
         return cls(change_type="mode_change", old_mode=old_mode, new_mode=new_mode)
 ```
 
@@ -104,6 +111,7 @@ class InsertPosition(Enum):
     AFTER = "after"
     AT_BRANCH_HEAD = "at_branch_head"
 
+
 @dataclass
 class MovePatch:
     patch_id: PatchId
@@ -111,10 +119,12 @@ class MovePatch:
     to_commit: CommitId
     position: InsertPosition
 
+
 @dataclass
 class SplitCommit:
     source_commit: CommitId
-    new_commits: list['NewCommit']
+    new_commits: list["NewCommit"]
+
 
 @dataclass
 class CreateCommit:
@@ -122,16 +132,19 @@ class CreateCommit:
     message: str
     position: InsertPosition
 
+
 @dataclass
 class MergeCommits:
     commit_ids: list[CommitId]
     message: str
+
 
 @dataclass
 class NewCommit:
     message: str
     patches: list[PatchId]
     position: InsertPosition
+
 
 # Union type for all operations
 Operation = Union[MovePatch, SplitCommit, CreateCommit, MergeCommits]
@@ -153,30 +166,40 @@ class GitService(ABC):
         pass
 
     @abstractmethod
-    async def get_commit_graph(self, repo: Repository, limit: Optional[int] = None) -> CommitGraph:
+    async def get_commit_graph(
+        self, repo: Repository, limit: Optional[int] = None
+    ) -> CommitGraph:
         """Get the commit graph for the repository."""
         pass
 
     @abstractmethod
-    async def get_commit_diff(self, repo: Repository, commit_id: CommitId) -> list[Patch]:
+    async def get_commit_diff(
+        self, repo: Repository, commit_id: CommitId
+    ) -> list[Patch]:
         """Get the diff for a specific commit."""
         pass
 
     @abstractmethod
-    async def apply_operation(self, repo: Repository, operation: Operation) -> OperationResult:
+    async def apply_operation(
+        self, repo: Repository, operation: Operation
+    ) -> OperationResult:
         """Apply an operation to the repository."""
         pass
 
     @abstractmethod
-    async def preview_operation(self, repo: Repository, operation: Operation) -> OperationPreview:
+    async def preview_operation(
+        self, repo: Repository, operation: Operation
+    ) -> OperationPreview:
         """Preview the effects of an operation."""
         pass
+
 
 class GitServiceImpl(GitService):
     """Implementation of GitService using GitPython."""
 
     def __init__(self):
         self._repo_cache: dict[Path, Repository] = {}
+
 
 @dataclass
 class OperationResult:
@@ -185,6 +208,7 @@ class OperationResult:
     modified_commits: list[CommitId]
     conflicts: list[Conflict]
     message: str
+
 
 @dataclass
 class OperationPreview:
@@ -203,19 +227,27 @@ class PatchManager:
         self.git_service = git_service
         self.diff_engine = DiffEngine()
 
-    async def extract_patches(self, repo: Repository, commit_id: CommitId) -> list[Patch]:
+    async def extract_patches(
+        self, repo: Repository, commit_id: CommitId
+    ) -> list[Patch]:
         """Extract patches from a commit."""
         pass
 
-    async def apply_patches(self, repo: Repository, patches: list[Patch], target: CommitId) -> CommitId:
+    async def apply_patches(
+        self, repo: Repository, patches: list[Patch], target: CommitId
+    ) -> CommitId:
         """Apply patches to a target commit."""
         pass
 
-    async def create_commit_from_patches(self, repo: Repository, patches: list[Patch], message: str) -> CommitId:
+    async def create_commit_from_patches(
+        self, repo: Repository, patches: list[Patch], message: str
+    ) -> CommitId:
         """Create a new commit from a collection of patches."""
         pass
 
-    async def detect_conflicts(self, repo: Repository, patches: list[Patch], target: CommitId) -> list[Conflict]:
+    async def detect_conflicts(
+        self, repo: Repository, patches: list[Patch], target: CommitId
+    ) -> list[Conflict]:
         """Detect potential conflicts when applying patches."""
         pass
 ```
@@ -229,6 +261,7 @@ class ConflictKind(Enum):
     DELETE_MODIFY_CONFLICT = "delete_modify_conflict"
     RENAME_CONFLICT = "rename_conflict"
 
+
 @dataclass
 class Conflict:
     id: str
@@ -237,6 +270,7 @@ class Conflict:
     description: str
     our_content: str
     their_content: str
+
 
 class DiffEngine:
     """Low-level diff parsing and manipulation."""
@@ -257,7 +291,9 @@ class DiffEngine:
         """Detect conflicts between patches."""
         pass
 
-    def resolve_conflict(self, conflict: Conflict, resolution: ConflictResolution) -> Patch:
+    def resolve_conflict(
+        self, conflict: Conflict, resolution: ConflictResolution
+    ) -> Patch:
         """Resolve a conflict with the given resolution."""
         pass
 ```
@@ -268,7 +304,9 @@ class DiffEngine:
 
 ```python
 class DiffEngine:
-    async def extract_patches_from_commit(self, repo: Repository, commit_id: CommitId) -> list[Patch]:
+    async def extract_patches_from_commit(
+        self, repo: Repository, commit_id: CommitId
+    ) -> list[Patch]:
         """Extract patches from a git commit."""
         patches = []
 
@@ -285,7 +323,10 @@ class DiffEngine:
             diffs = parent.diff(commit, create_patch=True)
         else:
             # Initial commit - diff against empty tree
-            diffs = commit.diff(git_repo.commit('4b825dc642cb6eb9a060e54bf8d69288fbee4904'), create_patch=True)
+            diffs = commit.diff(
+                git_repo.commit("4b825dc642cb6eb9a060e54bf8d69288fbee4904"),
+                create_patch=True,
+            )
 
         # Process each diff (file change)
         for diff_item in diffs:
@@ -295,7 +336,9 @@ class DiffEngine:
 
         return patches
 
-    async def _process_diff_item(self, diff_item, source_commit: CommitId) -> Optional[Patch]:
+    async def _process_diff_item(
+        self, diff_item, source_commit: CommitId
+    ) -> Optional[Patch]:
         """Process a single diff item into a Patch."""
         # Extract file path
         file_path = Path(diff_item.a_path or diff_item.b_path)
@@ -304,7 +347,7 @@ class DiffEngine:
         patch_id = PatchId(f"{source_commit.short()}:{file_path}")
 
         # Parse hunks from diff
-        hunks = self._parse_hunks(diff_item.diff.decode('utf-8'))
+        hunks = self._parse_hunks(diff_item.diff.decode("utf-8"))
 
         # Detect mode changes
         mode_change = self._detect_mode_change(diff_item)
@@ -322,7 +365,9 @@ class DiffEngine:
 
 ```python
 class PatchManager:
-    async def apply_patch_to_commit(self, repo: Repository, patch: Patch, target_commit: CommitId) -> CommitId:
+    async def apply_patch_to_commit(
+        self, repo: Repository, patch: Patch, target_commit: CommitId
+    ) -> CommitId:
         """Apply a patch to a target commit."""
         # 1. Get GitPython repository
         git_repo = Repo(repo.path)
@@ -339,12 +384,14 @@ class PatchManager:
             await self._apply_patch_to_files(temp_path, patch)
 
             # 4. Stage changes in a new index
-            temp_index_path = temp_path / '.git' / 'temp_index'
+            temp_index_path = temp_path / ".git" / "temp_index"
 
             # Create new commit with changes
             new_commit_id = await self._create_commit_from_temp(
-                git_repo, temp_path, target_commit_obj,
-                f"Apply patch from {patch.source_commit.short()}"
+                git_repo,
+                temp_path,
+                target_commit_obj,
+                f"Apply patch from {patch.source_commit.short()}",
             )
 
         return new_commit_id
@@ -360,7 +407,9 @@ class PatchManager:
             original_content = ""
 
         # Apply hunks to content
-        modified_content = await self._apply_hunks_to_content(original_content, patch.hunks)
+        modified_content = await self._apply_hunks_to_content(
+            original_content, patch.hunks
+        )
 
         # Write modified content
         target_file.parent.mkdir(parents=True, exist_ok=True)
@@ -391,14 +440,16 @@ class DiffEngine:
         # Detect conflicts where multiple patches modify same lines
         for (file_path, line_no), modifying_patches in line_changes.items():
             if len(modifying_patches) > 1:
-                conflicts.append(Conflict(
-                    id=f"{file_path}:{line_no}",
-                    kind=ConflictKind.CONTENT_CONFLICT,
-                    file_path=file_path,
-                    description=f"Line {line_no} modified by {len(modifying_patches)} patches",
-                    our_content=self._extract_patch_content(modifying_patches[0]),
-                    their_content=self._extract_patch_content(modifying_patches[1]),
-                ))
+                conflicts.append(
+                    Conflict(
+                        id=f"{file_path}:{line_no}",
+                        kind=ConflictKind.CONTENT_CONFLICT,
+                        file_path=file_path,
+                        description=f"Line {line_no} modified by {len(modifying_patches)} patches",
+                        our_content=self._extract_patch_content(modifying_patches[0]),
+                        their_content=self._extract_patch_content(modifying_patches[1]),
+                    )
+                )
 
         return conflicts
 
@@ -421,6 +472,7 @@ from typing import Optional, Dict, Tuple, List
 from dataclasses import dataclass, field
 from functools import lru_cache
 
+
 @dataclass
 class GitCache:
     """LRU cache for git objects to improve performance."""
@@ -433,8 +485,12 @@ class GitCache:
     def __post_init__(self):
         """Initialize LRU cache functionality."""
         # Using functools.lru_cache for method-level caching
-        self._get_commit_cached = lru_cache(maxsize=self.capacity)(self._get_commit_impl)
-        self._get_patches_cached = lru_cache(maxsize=self.capacity)(self._get_patches_impl)
+        self._get_commit_cached = lru_cache(maxsize=self.capacity)(
+            self._get_commit_impl
+        )
+        self._get_patches_cached = lru_cache(maxsize=self.capacity)(
+            self._get_patches_impl
+        )
 
     def get_commit(self, commit_id: CommitId) -> Optional[CommitInfo]:
         """Get cached commit info."""
@@ -461,10 +517,7 @@ class GitCache:
         self.patches.pop(commit_key, None)
 
         # Clear diff cache entries involving this commit
-        keys_to_remove = [
-            key for key in self.diffs.keys()
-            if commit_key in key
-        ]
+        keys_to_remove = [key for key in self.diffs.keys() if commit_key in key]
         for key in keys_to_remove:
             self.diffs.pop(key, None)
 
@@ -489,9 +542,12 @@ class GitCache:
 from typing import List, Optional
 from pathlib import Path
 
+
 class GitPatchError(Exception):
     """Base exception for all Git Patchdance operations."""
+
     pass
+
 
 class GitError(GitPatchError):
     """Git operation failed."""
@@ -500,12 +556,14 @@ class GitError(GitPatchError):
         super().__init__(f"Git operation failed: {message}")
         self.git_error = git_error
 
+
 class IoError(GitPatchError):
     """IO operation failed."""
 
     def __init__(self, message: str, io_error: Optional[Exception] = None):
         super().__init__(f"IO operation failed: {message}")
         self.io_error = io_error
+
 
 class PatchError(GitPatchError):
     """Patch application failed."""
@@ -514,13 +572,15 @@ class PatchError(GitPatchError):
         super().__init__(f"Patch application failed: {reason}")
         self.reason = reason
 
+
 class ConflictError(GitPatchError):
     """Conflict detected during operation."""
 
-    def __init__(self, description: str, conflicts: List['Conflict']):
+    def __init__(self, description: str, conflicts: List["Conflict"]):
         super().__init__(f"Conflict detected: {description}")
         self.description = description
         self.conflicts = conflicts
+
 
 class RepositoryNotFound(GitPatchError):
     """Repository not found at specified path."""
@@ -529,6 +589,7 @@ class RepositoryNotFound(GitPatchError):
         super().__init__(f"Repository not found at path: {path}")
         self.path = path
 
+
 class InvalidCommitId(GitPatchError):
     """Invalid commit ID provided."""
 
@@ -536,16 +597,18 @@ class InvalidCommitId(GitPatchError):
         super().__init__(f"Invalid commit ID: {commit_id}")
         self.commit_id = commit_id
 
+
 class OperationCancelled(GitPatchError):
     """Operation cancelled by user."""
 
     def __init__(self):
         super().__init__("Operation cancelled by user")
 
+
 # Type alias for Result pattern
 from typing import Union, TypeVar
 
-T = TypeVar('T')
+T = TypeVar("T")
 Result = Union[T, GitPatchError]
 ```
 
@@ -557,11 +620,10 @@ import asyncio
 import shutil
 from pathlib import Path
 
+
 class PatchManager:
     async def recover_from_failed_operation(
-        self,
-        repo: Repository,
-        operation_id: str
+        self, repo: Repository, operation_id: str
     ) -> None:
         """Recover from a failed operation by rolling back changes."""
         try:
@@ -587,13 +649,12 @@ class PatchManager:
             raise IoError(f"Backup file not found: {backup_file}")
 
         import json
+
         with backup_file.open() as f:
             return json.load(f)
 
     async def rollback_git_changes(
-        self,
-        repo: Repository,
-        backup_state: Dict[str, Any]
+        self, repo: Repository, backup_state: Dict[str, Any]
     ) -> None:
         """Rollback git repository changes."""
         from git import Repo
@@ -601,18 +662,18 @@ class PatchManager:
         git_repo = Repo(repo.path)
 
         # Reset to original HEAD if specified
-        if 'original_head' in backup_state:
-            git_repo.git.reset('--hard', backup_state['original_head'])
+        if "original_head" in backup_state:
+            git_repo.git.reset("--hard", backup_state["original_head"])
 
         # Restore refs if they were modified
-        if 'original_refs' in backup_state:
-            for ref_name, ref_value in backup_state['original_refs'].items():
+        if "original_refs" in backup_state:
+            for ref_name, ref_value in backup_state["original_refs"].items():
                 git_repo.refs[ref_name].set_commit(ref_value)
 
     async def cleanup_temp_files(self, backup_state: Dict[str, Any]) -> None:
         """Clean up temporary files created during operation."""
-        if 'temp_files' in backup_state:
-            for temp_file in backup_state['temp_files']:
+        if "temp_files" in backup_state:
+            for temp_file in backup_state["temp_files"]:
                 temp_path = Path(temp_file)
                 if temp_path.exists():
                     if temp_path.is_dir():
@@ -636,6 +697,7 @@ from typing import Set, Dict, Deque, Optional
 from collections import deque
 import asyncio
 
+
 @dataclass
 class LazyCommitGraph:
     """Lazy-loading commit graph for large repositories."""
@@ -646,11 +708,7 @@ class LazyCommitGraph:
     loading_queue: Deque[str] = field(default_factory=deque)
     batch_size: int = 50
 
-    async def load_commit_range(
-        self,
-        start: CommitId,
-        count: int
-    ) -> List[CommitInfo]:
+    async def load_commit_range(self, start: CommitId, count: int) -> List[CommitInfo]:
         """Load a range of commits starting from the given commit."""
         commits = []
         current = start.value
@@ -673,11 +731,7 @@ class LazyCommitGraph:
 
         return commits[:count]
 
-    async def _load_commit_batch(
-        self,
-        start: str,
-        count: int
-    ) -> List[CommitInfo]:
+    async def _load_commit_batch(self, start: str, count: int) -> List[CommitInfo]:
         """Load a batch of commits."""
         commits = []
         current = start
@@ -709,6 +763,7 @@ class LazyCommitGraph:
         """Load commit information from git repository."""
         try:
             from git import Repo
+
             git_repo = Repo(self.repo.path)
             commit = git_repo.commit(commit_id)
 
@@ -719,7 +774,12 @@ class LazyCommitGraph:
                 email=commit.author.email,
                 timestamp=commit.committed_datetime,
                 parent_ids=[CommitId(parent.hexsha) for parent in commit.parents],
-                files_changed=[item.a_path or item.b_path for item in commit.diff(commit.parents[0] if commit.parents else None)]
+                files_changed=[
+                    item.a_path or item.b_path
+                    for item in commit.diff(
+                        commit.parents[0] if commit.parents else None
+                    )
+                ],
             )
         except Exception:
             return None
@@ -747,25 +807,23 @@ from abc import ABC, abstractmethod
 import asyncio
 from typing import Tuple
 
+
 class GitService(ABC):
     """Abstract git service interface."""
 
     @abstractmethod
     async def apply_operation(
-        self,
-        repo: Repository,
-        operation: Operation
+        self, repo: Repository, operation: Operation
     ) -> OperationResult:
         """Apply an operation to the repository."""
         pass
+
 
 class GitServiceImpl(GitService):
     """Implementation of GitService with async operations."""
 
     async def apply_operation(
-        self,
-        repo: Repository,
-        operation: Operation
+        self, repo: Repository, operation: Operation
     ) -> OperationResult:
         """Apply operation with parallel processing where possible."""
 
@@ -799,12 +857,10 @@ class GitServiceImpl(GitService):
             raise PatchError(f"Unsupported operation type: {type(operation)}")
 
     async def extract_patch(
-        self,
-        repo: Repository,
-        commit_id: CommitId,
-        patch_id: PatchId
+        self, repo: Repository, commit_id: CommitId, patch_id: PatchId
     ) -> Patch:
         """Extract a specific patch from a commit."""
+
         # Implementation would use asyncio.to_thread for CPU-bound work
         def _extract():
             # Actual patch extraction logic
@@ -813,11 +869,10 @@ class GitServiceImpl(GitService):
         return await asyncio.to_thread(_extract)
 
     async def prepare_target_commit(
-        self,
-        repo: Repository,
-        commit_id: CommitId
+        self, repo: Repository, commit_id: CommitId
     ) -> Dict[str, Any]:
         """Prepare target commit state for patch application."""
+
         def _prepare():
             # Prepare target commit state
             return {"commit_id": commit_id, "prepared": True}
@@ -825,12 +880,10 @@ class GitServiceImpl(GitService):
         return await asyncio.to_thread(_prepare)
 
     async def apply_patch_async(
-        self,
-        repo: Repository,
-        patch: Patch,
-        target_state: Dict[str, Any]
+        self, repo: Repository, patch: Patch, target_state: Dict[str, Any]
     ) -> OperationResult:
         """Apply patch to target with async processing."""
+
         def _apply():
             # Actual patch application logic
             return OperationResult(
@@ -838,15 +891,13 @@ class GitServiceImpl(GitService):
                 new_commit_ids=[CommitId("new_commit_id")],
                 modified_commits=[],
                 conflicts=[],
-                message="Patch applied successfully"
+                message="Patch applied successfully",
             )
 
         return await asyncio.to_thread(_apply)
 
     async def _apply_split_commit(
-        self,
-        repo: Repository,
-        operation: SplitCommit
+        self, repo: Repository, operation: SplitCommit
     ) -> OperationResult:
         """Apply split commit operation."""
         # Extract all patches from source commit
@@ -858,7 +909,7 @@ class GitServiceImpl(GitService):
             task = self.create_commit_from_patches(
                 repo,
                 [p for p in patches if p.id in new_commit.patches],
-                new_commit.message
+                new_commit.message,
             )
             new_commit_tasks.append(task)
 
@@ -870,7 +921,7 @@ class GitServiceImpl(GitService):
                 new_commit_ids=new_commit_ids,
                 modified_commits=[operation.source_commit],
                 conflicts=[],
-                message=f"Split commit into {len(new_commit_ids)} new commits"
+                message=f"Split commit into {len(new_commit_ids)} new commits",
             )
         except Exception as e:
             raise GitError("Failed to split commit") from e
@@ -888,6 +939,7 @@ from git import Repo
 from git_patchdance.core.models import CommitId, CommitInfo
 from git_patchdance.git.service import GitServiceImpl
 from git_patchdance.diff.engine import DiffEngine
+
 
 class TestRepository:
     """Helper class for creating test repositories."""
@@ -921,12 +973,14 @@ class TestRepository:
         """Clean up temporary directory."""
         self.temp_dir.cleanup()
 
+
 @pytest.fixture
 def test_repo():
     """Pytest fixture for test repository."""
     repo = TestRepository()
     yield repo
     repo.cleanup()
+
 
 class TestPatchExtraction:
     """Tests for patch extraction functionality."""
@@ -935,10 +989,9 @@ class TestPatchExtraction:
     async def test_patch_extraction(self, test_repo):
         """Test basic patch extraction from commit."""
         # Create test commit
-        commit_id = test_repo.create_commit("Test commit", {
-            "file1.txt": "line1\nline2\nline3",
-            "file2.txt": "content2"
-        })
+        commit_id = test_repo.create_commit(
+            "Test commit", {"file1.txt": "line1\nline2\nline3", "file2.txt": "content2"}
+        )
 
         # Extract patches
         diff_engine = DiffEngine()
@@ -946,7 +999,7 @@ class TestPatchExtraction:
             path=test_repo.path,
             current_branch="main",
             is_dirty=False,
-            head_commit=CommitId(commit_id)
+            head_commit=CommitId(commit_id),
         )
 
         patches = await diff_engine.extract_patches_from_commit(
@@ -962,14 +1015,14 @@ class TestPatchExtraction:
     async def test_patch_extraction_with_modifications(self, test_repo):
         """Test patch extraction with file modifications."""
         # Create initial commit
-        initial_commit = test_repo.create_commit("Initial", {
-            "file1.txt": "original content"
-        })
+        initial_commit = test_repo.create_commit(
+            "Initial", {"file1.txt": "original content"}
+        )
 
         # Create modified commit
-        modified_commit = test_repo.create_commit("Modified", {
-            "file1.txt": "modified content"
-        })
+        modified_commit = test_repo.create_commit(
+            "Modified", {"file1.txt": "modified content"}
+        )
 
         # Extract patches from modification
         diff_engine = DiffEngine()
@@ -977,7 +1030,7 @@ class TestPatchExtraction:
             path=test_repo.path,
             current_branch="main",
             is_dirty=False,
-            head_commit=CommitId(modified_commit)
+            head_commit=CommitId(modified_commit),
         )
 
         patches = await diff_engine.extract_patches_from_commit(
@@ -988,6 +1041,7 @@ class TestPatchExtraction:
         assert len(patches) == 1
         assert patches[0].target_file.name == "file1.txt"
         assert len(patches[0].hunks) > 0
+
 
 class TestGitService:
     """Tests for GitService functionality."""
@@ -1029,8 +1083,13 @@ from pathlib import Path
 from git_patchdance.patch.manager import PatchManager
 from git_patchdance.git.service import GitServiceImpl
 from git_patchdance.core.models import (
-    MovePatch, CommitId, PatchId, InsertPosition, Repository
+    MovePatch,
+    CommitId,
+    PatchId,
+    InsertPosition,
+    Repository,
 )
+
 
 class TestIntegration:
     """Integration tests for full workflows."""
@@ -1039,15 +1098,15 @@ class TestIntegration:
     async def test_full_patch_workflow(self, test_repo):
         """Test complete patch workflow from extraction to application."""
         # 1. Create test repository with history
-        commit1 = test_repo.create_commit("First commit", {
-            "file1.txt": "original content\nline 2\nline 3"
-        })
-        commit2 = test_repo.create_commit("Second commit", {
-            "file2.txt": "another file content"
-        })
-        commit3 = test_repo.create_commit("Third commit", {
-            "file1.txt": "modified content\nline 2\nline 3\nnew line"
-        })
+        commit1 = test_repo.create_commit(
+            "First commit", {"file1.txt": "original content\nline 2\nline 3"}
+        )
+        commit2 = test_repo.create_commit(
+            "Second commit", {"file2.txt": "another file content"}
+        )
+        commit3 = test_repo.create_commit(
+            "Third commit", {"file1.txt": "modified content\nline 2\nline 3\nnew line"}
+        )
 
         # 2. Initialize services
         git_service = GitServiceImpl()
@@ -1057,7 +1116,7 @@ class TestIntegration:
             path=test_repo.path,
             current_branch="main",
             is_dirty=False,
-            head_commit=CommitId(commit3)
+            head_commit=CommitId(commit3),
         )
 
         # 3. Extract patches from commit
@@ -1069,7 +1128,7 @@ class TestIntegration:
             patch_id=patches[0].id,
             from_commit=CommitId(commit3),
             to_commit=CommitId(commit2),
-            position=InsertPosition.AFTER
+            position=InsertPosition.AFTER,
         )
 
         result = await patch_manager.apply_operation(repository, operation)
@@ -1083,17 +1142,17 @@ class TestIntegration:
     async def test_conflict_detection_workflow(self, test_repo):
         """Test workflow with conflict detection."""
         # Create conflicting changes
-        commit1 = test_repo.create_commit("Base", {
-            "shared.txt": "line 1\nline 2\nline 3"
-        })
+        commit1 = test_repo.create_commit(
+            "Base", {"shared.txt": "line 1\nline 2\nline 3"}
+        )
 
-        commit2 = test_repo.create_commit("Change A", {
-            "shared.txt": "line 1\nmodified line 2\nline 3"
-        })
+        commit2 = test_repo.create_commit(
+            "Change A", {"shared.txt": "line 1\nmodified line 2\nline 3"}
+        )
 
-        commit3 = test_repo.create_commit("Change B", {
-            "shared.txt": "line 1\nline 2\ndifferent modification\nline 3"
-        })
+        commit3 = test_repo.create_commit(
+            "Change B", {"shared.txt": "line 1\nline 2\ndifferent modification\nline 3"}
+        )
 
         # Initialize services
         git_service = GitServiceImpl()
@@ -1103,7 +1162,7 @@ class TestIntegration:
             path=test_repo.path,
             current_branch="main",
             is_dirty=False,
-            head_commit=CommitId(commit3)
+            head_commit=CommitId(commit3),
         )
 
         # Extract patches from both commits
@@ -1123,11 +1182,14 @@ class TestIntegration:
     async def test_commit_splitting_workflow(self, test_repo):
         """Test splitting a commit into multiple commits."""
         # Create commit with multiple file changes
-        large_commit = test_repo.create_commit("Large commit", {
-            "feature1.py": "# Feature 1 implementation\nclass Feature1:\n    pass",
-            "feature2.py": "# Feature 2 implementation\nclass Feature2:\n    pass",
-            "tests.py": "# Tests for both features\nimport unittest"
-        })
+        large_commit = test_repo.create_commit(
+            "Large commit",
+            {
+                "feature1.py": "# Feature 1 implementation\nclass Feature1:\n    pass",
+                "feature2.py": "# Feature 2 implementation\nclass Feature2:\n    pass",
+                "tests.py": "# Tests for both features\nimport unittest",
+            },
+        )
 
         # Initialize services
         git_service = GitServiceImpl()
@@ -1137,11 +1199,13 @@ class TestIntegration:
             path=test_repo.path,
             current_branch="main",
             is_dirty=False,
-            head_commit=CommitId(large_commit)
+            head_commit=CommitId(large_commit),
         )
 
         # Extract all patches from the large commit
-        patches = await patch_manager.extract_patches(repository, CommitId(large_commit))
+        patches = await patch_manager.extract_patches(
+            repository, CommitId(large_commit)
+        )
         assert len(patches) == 3
 
         # Group patches for splitting
@@ -1167,6 +1231,7 @@ class TestIntegration:
                 repository, test_patches, "Add tests"
             )
             assert commit3 is not None
+
 
 @pytest.mark.slow
 class TestPerformance:
