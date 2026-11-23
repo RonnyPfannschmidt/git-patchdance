@@ -268,11 +268,14 @@ async def test_full_patch_workflow():
     """Test complete patch workflow from extraction to application."""
     # Create test repository with history
     with TemporaryDirectory() as temp_dir:
-        test_repo = await create_test_repo_with_commits(temp_dir, [
-            ("Initial commit", {"file1.txt": "content1"}),
-            ("Add feature", {"file2.txt": "content2"}),
-            ("Fix bug", {"file1.txt": "fixed content1"}),
-        ])
+        test_repo = await create_test_repo_with_commits(
+            temp_dir,
+            [
+                ("Initial commit", {"file1.txt": "content1"}),
+                ("Add feature", {"file2.txt": "content2"}),
+                ("Fix bug", {"file1.txt": "fixed content1"}),
+            ],
+        )
 
         # Initialize services
         git_service = GitServiceImpl()
